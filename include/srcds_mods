@@ -399,15 +399,15 @@ $PLUGIN_INFO" \
     20 44 4 \
     1 "MetaMod          Manage MM" \
     2 "SourceMod        Manage SM" \
-    3 "Plugins          Manage Plugins" \
-    4 "HLstatsX         Manage HLstatsX" \
+    3 "HLstatsX         Manage HLstatsX" \
+    4 "Plugins          Manage Plugins" \
     --stdout)
 
   case "$CHOICE" in
   1) metamod_menu ;;
   2) sourcemod_menu ;;
-  3) plugins_menu ;;
-  4) hlstatsx_menu ;;
+  3) hlstatsx_menu ;;
+  4) plugins_menu ;;
   *) return ;;
   esac
   srcds_mods
