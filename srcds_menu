@@ -288,9 +288,10 @@ function srcds_logs() {
       --title "Steam log files" \
       --menu "Select a file:" 0 "$WIDTH" 17 \
       "${MENU_ITEMS[@]}")
-
-    [ -z "$CHOICE" ] && return 1
-    nano "$CHOICE"
+    # nano choice
+    if [[ -n "$CHOICE" ]]; then
+      nano "$CHOICE"
+    fi
     srcds_logs # go back to logs menu
     ;;
 
