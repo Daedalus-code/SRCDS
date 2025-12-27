@@ -85,11 +85,8 @@ function srcds_console() {
 srcds_start() {
   # if already running
   if screen -list 2>/dev/null | grep -q "[.]srcds_screen"; then
-
     SRCDS_PID_INFO="$(ps -p "$(pgrep srcds_linux 2>/dev/null)" 2>/dev/null | column -t)"
-
     dialog --no-collapse --msgbox "Server already running!
-
 $SRCDS_PID_INFO" 0 0
     # return to menu
     return 1
@@ -659,7 +656,7 @@ fi
 
 SCREEN_LOG="$HLSTATSX_DIR/screenlog.0"
 SCREEN_SESSION="srcds_screen"
-SCREEN_MAXLINES="7000"
+SCREEN_MAXLINES="9000"
 
 # trim screen log
 if [ -f "$SCREEN_LOG" ] && [ "$(wc -l <"$SCREEN_LOG")" -ge "$SCREEN_MAXLINES" ]; then
