@@ -480,7 +480,7 @@ ACTIVE_HOSTNAME="$(grep "hostname" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg 2>
 # if no hostname configuration
 if [[ -z "$ACTIVE_HOSTNAME" ]]; then
   OUTPUT="$SRCDS_DIR/$SERVER_GAME/cfg/server.cfg not found, create new one?"
-  OUTPUT_WIDTH="$(echo "$OUTPUT" | wc -L)"
+  OUTPUT_WIDTH="$(echo "$(echo "$OUTPUT" | wc -L)+6" | bc 2>/dev/null)"
   dialog --yesno "$OUTPUT" 5 "$OUTPUT_WIDTH"
   [[ ! $? == 0 ]] && return 1
   echo "Creating new server.cfg.."
