@@ -39,12 +39,14 @@ source "$HOME/bin/include/srcds_mods"
 # srcds version
 ################################################################################
 
-# update version file
-LOC_BIN=$(wc -l "$HOME"/bin/* 2>/dev/null | grep "total" | awk '{ print $1 }')
-LOC_INCLUDE=$(wc -l "$HOME"/bin/include/*_* 2>/dev/null | grep "total" | awk '{ print $1 }')
-LOC_V="$(echo "$LOC_BIN+$LOC_INCLUDE" | bc 2>/dev/null)"
-
-echo "v$LOC_V" >"$HOME/bin/version"
+# not found
+if [[ ! -f "$HOME/bin/version" ]]; then
+  # update version file
+  LOC_BIN=$(wc -l "$HOME"/bin/* 2>/dev/null | grep "total" | awk '{ print $1 }')
+  LOC_INCLUDE=$(wc -l "$HOME"/bin/include/*_* 2>/dev/null | grep "total" | awk '{ print $1 }')
+  LOC_V="$(echo "$LOC_BIN+$LOC_INCLUDE" | bc 2>/dev/null)"
+  echo "v$LOC_V" >"$HOME/bin/version"
+fi
 
 SCAN_FILE="$HOME/bin/srcds_menu"
 VERSION_FILE="$HOME/bin/version"
