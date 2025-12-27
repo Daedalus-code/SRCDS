@@ -250,8 +250,8 @@ srcds_mods() {
   MM_DIR="$ADDONS_DIR/metamod"
 
   # detect status
-  SM_INSTALLED=$([ -d "$SM_DIR" ] && echo "Installed" || echo "Missing!")
-  MM_INSTALLED=$([ -d "$MM_DIR" ] && echo "Installed" || echo "Missing!")
+  SM_INSTALLED=$([ -d "$SM_DIR" ] && echo "OK" || echo "N/A")
+  MM_INSTALLED=$([ -d "$MM_DIR" ] && echo "OK" || echo "N/A")
 
   SM_VER="-"
   MM_VER="-"
@@ -313,7 +313,7 @@ srcds_mods() {
   ##############################################################################
 
   if [ -d "$HLSTATSX_DIR" ]; then
-    HLSTATSX_INSTALLED="Installed"
+    HLSTATSX_INSTALLED="OK"
 
     HLSTATSX_VER=$(
       perl -ne 'print $1 if /^\s*\$g_version\s*=\s*[\"\x27]([^\"\x27]+)/' \
@@ -323,7 +323,7 @@ srcds_mods() {
 
     [ -z "$HLSTATSX_VER" ] && HLSTATSX_VER="unknown"
   else
-    HLSTATSX_INSTALLED="Missing!"
+    HLSTATSX_INSTALLED="N/A"
     HLSTATSX_VER="unknown"
   fi
 
@@ -372,28 +372,31 @@ srcds_mods() {
     DISABLED="0"
   fi
 
-  PLUGIN_INFO="Plugins....:  ${#ENABLED[@]} Enabled - ${#DISABLED[@]} Disabled"
+  PLUGIN_INFO="Plugins
+└─ Status    : ${#ENABLED[@]} Enabled - ${#DISABLED[@]} Disabled"
 
   ##############################################################################
 
   # info table text
-  INFO="MetaMod....: $MM_VER $MM_INSTALLED
-Latest.....: $MM_LATEST_VER
--
-SourceMod..: $SM_VER $SM_INSTALLED
-Latest.....: $SM_LATEST_VER
--
-HLstatsX...: $HLSTATSX_VER $HLSTATSX_INSTALLED
-hlstats.pl.: $HLSTATX_STATUS
-"
+  INFO="MetaMod
+├─ Installed : $MM_VER $MM_INSTALLED
+└─ Latest    : $MM_LATEST_VER
+
+SourceMod
+├─ Installed : $SM_VER $SM_INSTALLED
+└─ Latest    : $SM_LATEST_VER
+
+HLstatsX
+├─ Installed : $HLSTATSX_VER $HLSTATSX_INSTALLED
+└─ Uptime    : $HLSTATX_STATUS"
 
   # menu
   CHOICE=$(dialog --clear \
     --title "Mods" \
-    --no-collapse --menu "$(echo "$INFO" | column -t)
+    --no-collapse --menu "$INFO
 
 $PLUGIN_INFO" \
-    20 44 4 \
+    24 44 4 \
     1 "MetaMod          Manage MM" \
     2 "SourceMod        Manage SM" \
     3 "HLstatsX         Manage HLstatsX" \
