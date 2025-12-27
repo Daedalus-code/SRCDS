@@ -375,7 +375,7 @@ srcds_mods() {
     DISABLED="0"
   fi
 
-  PLUGIN_INFO="Plugins....: ${#ENABLED[@]} Enabled - ${#DISABLED[@]} Disabled"
+  PLUGIN_INFO="Plugins....:  ${#ENABLED[@]} Enabled - ${#DISABLED[@]} Disabled"
 
   ##############################################################################
 
