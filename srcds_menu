@@ -349,7 +349,8 @@ function srcds_logs() {
 ################################################################################
 
 function srcds_update() {
-
+  # remove old version file
+  rm "$HOME/bin/version"
   # if missing, empty
   if [[ ! -f "$HOME/bin/DIR" || -z $(grep -v '^[[:space:]]*$' "$HOME/bin/DIR") ]]; then
     echo "File missing or empty/blank.."
