@@ -380,21 +380,21 @@ srcds_mods() {
   ##############################################################################
 
   # info table text
-  INFO="MetaMod....: $MM_VER [$MM_INSTALLED]
+  INFO="MetaMod....: $MM_VER $MM_INSTALLED
 Latest.....: $MM_LATEST_VER
 -
-SourceMod..: $SM_VER [$SM_INSTALLED]
+SourceMod..: $SM_VER $SM_INSTALLED
 Latest.....: $SM_LATEST_VER
 -
-HLstatsX...: $HLSTATSX_VER [$HLSTATSX_INSTALLED]
+HLstatsX...: $HLSTATSX_VER $HLSTATSX_INSTALLED
 hlstats.pl.: $HLSTATX_STATUS
--
 "
 
   # menu
   CHOICE=$(dialog --clear \
     --title "Mods" \
     --no-collapse --menu "$(echo "$INFO" | column -t)
+
 $PLUGIN_INFO" \
     20 44 4 \
     1 "MetaMod          Manage MM" \
