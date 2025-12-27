@@ -74,7 +74,7 @@ function srcds_console() {
     return 1
   fi
   dialog --msgbox "CTRL A+D for soft exit (detach)" 5 36
-  screen -r srcds_screen
+  screen -r -q srcds_screen && clear
 }
 
 ################################################################################
