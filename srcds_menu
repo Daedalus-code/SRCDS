@@ -474,7 +474,13 @@ SCREEN_PID="$(screen -li 2>/dev/null | grep "srcds_screen" 2>/dev/null | awk -F.
 
 # screenlog.0
 ACTIVE_STATUS="$(grep -A7 "hostname" "$HOME"/bin/include/screenlog.0 2>/dev/null | tail -8 | tr -d ')\r')"
-ACTIVE_HOSTNAME="$(grep "hostname" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg | awk -F'"' '{ print $2 }')"
+ACTIVE_HOSTNAME="$(grep "hostname" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg 2>/dev/null | awk -F'"' '{ print $2 }')"
+
+# if no hostname configuration
+if [[ -z "$ACTIVE_HOSTNAME" ]]; then
+  # create server.cfg with default hostname
+  echo "hostname '"'Source Dedicated Server :: SRCDS based'"'" >"$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg
+fi
 
 # if zero
 if [[ -z "$ACTIVE_HOSTNAME" ]]; then
