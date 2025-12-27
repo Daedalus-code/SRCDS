@@ -1,0 +1,407 @@
+#!/bin/bash
+
+################################################################################
+#
+# SRCDS Tools & Options
+# Author: Daedalus-code
+#
+# License: GNU General Public License v3.0
+# Description: A menu-driven shell script for managing SRCDS servers, bots,
+#              data usage, crontab tasks, disk usage, map compression, and
+#              password generation.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this script. If not, see <https://www.gnu.org/licenses/>.
+#
+################################################################################
+
+# configuration
+SERVER_GAME_DIR="$SRCDS_DIR/$SERVER_GAME"
+ADDONS_DIR="$SERVER_GAME_DIR/addons"
+SM_PLUGINS_DIR="$ADDONS_DIR/sourcemod/plugins"
+TMP_DIR="/tmp/srcds_addons"
+mkdir -p "$TMP_DIR"
+
+# check
+require_game_dir() {
+  [ ! -d "$GAME_DIR" ] && {
+    dialog --msgbox "Game directory not found:\n$SERVER_GAME_DIR" 7 60
+    return 1
+  }
+}
+
+# version
+fetch_versions() {
+  URL="$1"
+  cURL -s "$URL" | grep -oP 'href="\K.*?linux\.tar\.gz'
+}
+
+# download
+download_and_extract() {
+  URL="$1"
+  cd "$TMP_DIR" || return
+  cURL -LO "$URL" || {
+    dialog --msgbox "Download failed." 5 20
+    return 1
+  }
+  tar -xzf "$(basename "$URL")" -C "$SERVER_GAME_DIR"
+}
+
+################################################################################
+# install hlstatsx
+################################################################################
+
+hlstatsx_menu() {
+  CHOICE=$(dialog --nocancel --menu "HLstatsX" 10 28 5 \
+    1 "Install HLstatsX" \
+    2 "Remove HLstatsX" \
+    0 "Back" \
+    --stdout)
+
+  case "$CHOICE" in
+  1)
+    DEFAULT_HLSTATSX="https://github.com/SnipeZilla/HLstatsX-v2.git"
+    HLSTATSX_REPO=$(dialog --stdout --inputbox "Enter HLstatsX repo:" 8 54 "$DEFAULT_HLSTATSX")
+    [ -z "$HLSTATSX_REPO" ] && HLSTATSX_REPO="$DEFAULT_HLSTATSX"
+
+    # update configuration if needed
+    if [[ "$(grep -c "HLSTATSX_DIR=" "$HOME"/bin/include/srcds.conf 2>/dev/null)" -eq "0" ]]; then
+      echo "
+HLSTATSX_DIR=$HOME/HLstatsX
+
+# END" >>"$HOME"/bin/include/srcds.conf
+    fi
+    # clone repo if missing
+    sudo -u steam bash <<EOF
+set -e
+HLSTATSX_DIR="\$HOME/HLstatsX"
+if [ ! -d "\$HLSTATSX_DIR" ]; then
+  cd
+  git clone "$HLSTATSX_REPO" HLstatsX
+fi
+EOF
+
+    HLSTATSX_INSTALLED="Yes"
+    HLSTATSX_VER="(clone)"
+    dialog --msgbox "HLstatsX installed at $HOME/HLstatsX" 6 50
+    ;;
+  2)
+    if [ -d "$HLSTATSX_DIR" ]; then
+      rm -rf "$HLSTATSX_DIR"
+      HLSTATSX_INSTALLED="No"
+      HLSTATSX_VER="-"
+      dialog --msgbox "HLstatsX removed." 5 30
+    else
+      dialog --msgbox "HLstatsX not installed." 5 30
+    fi
+    ;;
+  0) return ;;
+  esac
+}
+
+################################################################################
+# sourcemod
+################################################################################
+
+sourcemod_menu() {
+  CHOICE=$(dialog --nocancel --menu "SourceMod" 10 28 5 \
+    1 "Install SourceMod" \
+    2 "Remove SourceMod" \
+    0 "Back" \
+    --stdout)
+
+  case "$CHOICE" in
+  1)
+    VERSIONS=($(fetch_versions "https://www.sourcemod.net/downloads.php?branch=stable"))
+    MENU_ITEMS=()
+    for v in "${VERSIONS[@]}"; do
+      MENU_ITEMS+=("$(basename "$v")" "")
+    done
+    SELECT=$(dialog --menu "Select SM version" 20 70 10 "${MENU_ITEMS[@]}" --stdout)
+    [ -n "$SELECT" ] && download_and_extract "$SELECT"
+    ;;
+  2)
+    rm -rf "$ADDONS_DIR/sourcemod"
+    dialog --msgbox "SourceMod removed." 5 24
+    ;;
+  esac
+}
+
+################################################################################
+# metamod
+################################################################################
+
+metamod_menu() {
+  CHOICE=$(dialog --nocancel --menu "MetaMod" 10 26 5 \
+    1 "Install MetaMod" \
+    2 "Remove MetaMod" \
+    0 "Back" \
+    --stdout)
+
+  case "$CHOICE" in
+  1)
+    VERSIONS=($(fetch_versions "https://www.sourcemm.net/downloads.php?branch=stable"))
+    MENU_ITEMS=()
+    for v in "${VERSIONS[@]}"; do
+      MENU_ITEMS+=("$(basename "$v")" "")
+    done
+    SELECT=$(dialog --menu "Select MM version" 20 70 10 "${MENU_ITEMS[@]}" --stdout)
+    [ -n "$SELECT" ] && download_and_extract "$SELECT"
+    ;;
+  2)
+    rm -rf "$ADDONS_DIR/metamod"
+    dialog --msgbox "MetaMod removed." 5 20
+    ;;
+  esac
+}
+
+################################################################################
+# plugins
+################################################################################
+
+disable_plugin_menu() {
+  [ ! -d "$SM_PLUGINS_DIR" ] && {
+    dialog --msgbox "SourceMod not installed." 5 28
+    return
+  }
+
+  PLUGINS=()
+  MAX_LEN=0
+  for f in "$SM_PLUGINS_DIR"/*.smx; do
+    [ -e "$f" ] || continue
+    NAME=$(basename "$f")
+    PLUGINS+=("$NAME" "")
+    # track max length
+    ((${#NAME} > MAX_LEN)) && MAX_LEN=${#NAME}
+  done
+  [ ${#PLUGINS[@]} -eq 0 ] && {
+    dialog --msgbox "No plugins to disable." 5 28
+    return
+  }
+
+  # add some padding for dialog borders
+  MENU_WIDTH=$((MAX_LEN + 10))
+  [ $MENU_WIDTH -lt 30 ] && MENU_WIDTH=30 # minimum width
+
+  CHOICE=$(dialog --menu "Disable Plugin" 20 $MENU_WIDTH 10 "${PLUGINS[@]}" --stdout)
+  [ -n "$CHOICE" ] && {
+    mkdir -p "$SM_PLUGINS_DIR/disabled"
+    mv "$SM_PLUGINS_DIR/$CHOICE" "$SM_PLUGINS_DIR/disabled/"
+    dialog --msgbox "Disabled: $CHOICE" 6 40
+  }
+}
+
+enable_plugin_menu() {
+  DISABLED="$SM_PLUGINS_DIR/disabled"
+  [ ! -d "$DISABLED" ] && {
+    dialog --msgbox "No disabled plugins." 5 24
+    return
+  }
+
+  PLUGINS=()
+  MAX_LEN=0
+  for f in "$DISABLED"/*.smx; do
+    [ -e "$f" ] || continue
+    NAME=$(basename "$f")
+    PLUGINS+=("$NAME" "")
+    ((${#NAME} > MAX_LEN)) && MAX_LEN=${#NAME}
+  done
+  [ ${#PLUGINS[@]} -eq 0 ] && {
+    dialog --msgbox "No disabled plugins." 5 24
+    return
+  }
+
+  MENU_WIDTH=$((MAX_LEN + 10))
+  [ $MENU_WIDTH -lt 40 ] && MENU_WIDTH=40
+
+  CHOICE=$(dialog --menu "Enable Plugin" 20 $MENU_WIDTH 10 "${PLUGINS[@]}" --stdout)
+  [ -n "$CHOICE" ] && {
+    mv "$DISABLED/$CHOICE" "$SM_PLUGINS_DIR/"
+    dialog --msgbox "Enabled: $CHOICE" 6 40
+  }
+}
+
+plugins_menu() {
+  CHOICE=$(dialog --menu "Plugin Manager" 9 26 5 \
+    1 "Disable plugin" \
+    2 "Enable plugin" \
+    --stdout)
+
+  case "$CHOICE" in
+  1) disable_plugin_menu ;;
+  2) enable_plugin_menu ;;
+  esac
+}
+
+################################################################################
+# menu
+################################################################################
+
+srcds_mods() {
+  # mod directories
+  SM_DIR="$ADDONS_DIR/sourcemod"
+  MM_DIR="$ADDONS_DIR/metamod"
+
+  # detect status
+  SM_INSTALLED=$([ -d "$SM_DIR" ] && echo "Yes" || echo "Not installed!")
+  MM_INSTALLED=$([ -d "$MM_DIR" ] && echo "Yes" || echo "Not installed!")
+
+  SM_VER="-"
+  MM_VER="-"
+
+  ##############################################################################
+
+  CACHE_DIR="/tmp/srcds_versions"
+  CACHE_TTL=86400 # 24 hours
+  mkdir -p "$CACHE_DIR"
+
+  cached() {
+    NAME="$1"
+    URL="$2"
+    REGEX="$3"
+    SEDEXP="$4"
+    FILE="$CACHE_DIR/$NAME"
+    NOW=$(date +%s)
+
+    if [ -f "$FILE" ] && [ $((NOW - $(stat -c %Y "$FILE"))) -lt $CACHE_TTL ]; then
+      cat "$FILE"
+      return
+    fi
+
+    curl -s "$URL" |
+      grep -oP "$REGEX" |
+      head -n1 |
+      sed -E "$SEDEXP" |
+      tee "$FILE"
+  }
+
+  ##############################################################################
+
+  get_sm_version() {
+    INC="$SM_DIR/scripting/include/version.inc"
+    [ -f "$INC" ] && awk -F'"' '/SOURCEMOD_VERSION/ {print $2}' "$INC" || echo "-"
+  }
+
+  get_latest_sm_version() {
+    cached "sm_latest" \
+      "https://www.sourcemod.net/downloads.php?branch=stable" \
+      'sourcemod-[0-9.]+-git[0-9]+-linux\.tar\.gz' \
+      's/sourcemod-([0-9.]+-git[0-9]+)-linux\.tar\.gz/\1/'
+  }
+
+  ##############################################################################
+
+  get_mm_version() {
+    bin=$(ls "$ADDONS_DIR/metamod/bin"/linux*/metamod.*.so 2>/dev/null | head -n1)
+    [ -n "$bin" ] && basename "$bin" .so | sed 's/^metamod\.//' || echo "-"
+  }
+
+  get_latest_mm_version() {
+    cached "mm_latest" \
+      "https://www.sourcemm.net/downloads.php?branch=stable" \
+      'mmsource-[0-9.]+-git[0-9]+-linux\.tar\.gz' \
+      's/mmsource-([0-9.]+-git[0-9]+)-linux\.tar\.gz/\1/'
+  }
+
+  ##############################################################################
+
+  if [ -d "$HLSTATSX_DIR" ]; then
+    HLSTATSX_INSTALLED="Yes"
+    # Optional: if HLstatsX has a VERSION file
+    if [ -f "$HLSTATSX_DIR/VERSION" ]; then
+      HLSTATSX_VER=$(cat "$HLSTATSX_DIR/VERSION")
+    else
+      HLSTATSX_VER="(unknown version)"
+    fi
+  else
+    HLSTATSX_INSTALLED="No"
+  fi
+
+  ##############################################################################
+
+  HLSTATSX_PID=$(pgrep -f hlstats.pl)
+
+  if [[ -n "$HLSTATSX_PID" ]]; then
+    ELAPSED=$(ps -p "$HLSTATSX_PID" -o etime= | tr -d ' ')
+    # parse elapsed time
+    if [[ "$ELAPSED" =~ ([0-9]+)-([0-9]+):([0-9]+):([0-9]+) ]]; then
+      ((HOURS = ${BASH_REMATCH[1]} * 24 + ${BASH_REMATCH[2]}))
+      MINUTES=${BASH_REMATCH[3]}
+      SECONDS=${BASH_REMATCH[4]}
+    elif [[ "$ELAPSED" =~ ([0-9]+):([0-9]+):([0-9]+) ]]; then
+      HOURS=${BASH_REMATCH[1]}
+      MINUTES=${BASH_REMATCH[2]}
+      SECONDS=${BASH_REMATCH[3]}
+    else
+      HOURS=0
+      MINUTES=0
+      SECONDS=0
+    fi
+    HLSTATX_STATUS="($HLSTATSX_PID) $(printf "%02dh:%02dm:%02ds" "$HOURS" "$MINUTES" "$SECONDS")"
+  else
+    HLSTATX_STATUS="Not running"
+  fi
+
+  ##############################################################################
+
+  SM_VER=$(get_sm_version)
+  SM_LATEST_VER=$(get_latest_sm_version)
+  MM_VER=$(get_mm_version)
+  MM_LATEST_VER=$(get_latest_mm_version)
+
+  shopt -s nullglob
+  ENABLED=("$SM_PLUGINS_DIR"/*.smx)
+  DISABLED=("$SM_PLUGINS_DIR/disabled"/*.smx)
+  shopt -u nullglob
+
+  PLUGIN_INFO="${#ENABLED[@]} enabled / ${#DISABLED[@]} disabled"
+
+  ##############################################################################
+
+  # info table text
+  INFO="MetaMod   : $MM_INSTALLED
+Installed : $MM_VER
+Latest    : $MM_LATEST_VER
+
+SourceMod : $SM_INSTALLED
+Installed : $SM_VER
+Latest    : $SM_LATEST_VER
+
+Plugins   : $PLUGIN_INFO
+
+HLstatsX  : $HLSTATSX_INSTALLED
+Installed : $HLSTATSX_VER
+Daemon    : $HLSTATX_STATUS"
+
+  # menu
+  CHOICE=$(dialog --clear \
+    --title "Mods" \
+    --no-collapse --menu "$INFO" \
+    23 43 4 \
+    1 "MetaMod          Manage MM" \
+    2 "SourceMod        Manage SM" \
+    3 "Plugins          Manage Plugins" \
+    4 "HLstatsX         Manage HLstatsX" \
+    --stdout)
+
+  case "$CHOICE" in
+  1) metamod_menu ;;
+  2) sourcemod_menu ;;
+  3) plugins_menu ;;
+  4) hlstatsx_menu ;;
+  *) return ;;
+  esac
+  srcds_mods
+}
+
+# END
