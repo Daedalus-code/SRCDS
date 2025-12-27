@@ -1,0 +1,238 @@
+#!/bin/bash
+
+################################################################################
+#
+# SRCDS Tools & Options
+# Author: Daedalus-code
+#
+# License: GNU General Public License v3.0
+# Description: A menu-driven shell script for managing SRCDS servers, bots,
+#              data usage, crontab tasks, disk usage, map compression, and
+#              password generation.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this script. If not, see <https://www.gnu.org/licenses/>.
+#
+################################################################################
+
+# root check
+if [[ $EUID -ne 0 ]]; then
+  dialog --msgbox "Run this script with sudo!" 5 32
+  clear
+  echo "Run this as system administrator!"
+  exit 1
+fi
+
+################################################################################
+# install dependencies
+################################################################################
+
+install_dependencies() {
+  echo "Installing required packages..."
+  apt update
+  apt install -y bc wget tar dialog net-tools git ncdu lib32gcc-s1 lib32stdc++6
+}
+
+################################################################################
+# check or create default steam user
+################################################################################
+
+# default user
+USER_INPUT="steam"
+dialog --inputbox "Enter SRCDS user:" 7 36 "$USER_INPUT"
+if id "$USER_INPUT" &>/dev/null; then
+  echo "User '$USER_INPUT' exists, continuing..."
+else
+  echo "Creating user '$USER_INPUT'..."
+  adduser --disabled-login --gecos "" "$USER_INPUT"
+fi
+
+################################################################################
+# srcds_menu install
+################################################################################
+
+HOME_INSTALL="/home/$USER_INPUT"
+
+if [[ ! -f "$HOME_INSTALL"/bin/srcds_menu ]]; then
+
+  # ensure ~/bin, include exists
+  mkdir -p "$HOME_INSTALL/bin"
+  mkdir -p "$HOME_INSTALL/bin/include"
+
+  # copy directory
+  cp -r "$HOME_INSTALL"/SRCDS/* "$HOME_INSTALL"/bin
+  # executable
+  chmod +x "$HOME_INSTALL"/bin/srcds_menu
+  chmod +x "$HOME_INSTALL"/bin/include/start_srcds
+
+  # line version
+  LOC_V=$(wc -l <"$HOME_INSTALL"/bin/srcds_menu)
+  echo "v$LOC_V" >"$HOME_INSTALL/bin/version"
+
+  # date updated
+  echo "$(date | xargs)" >"$HOME_INSTALL"/bin/updated
+  cd && clear && exit
+fi
+
+################################################################################
+# bashrc
+################################################################################
+
+# only append to .bashrc if 'export PATH' is not already there
+if ! grep -q 'export PATH="\$HOME/bin:\$PATH"' "$HOME/.bashrc"; then
+  echo 'export PATH="$HOME/bin:$PATH"' >>"$HOME/.bashrc"
+  # Reload bashrc immediately to apply changes
+  source "$HOME/.bashrc"
+fi
+
+################################################################################
+# select game using dialog menu
+################################################################################
+
+select_game() {
+  GAMES=("CSS" "Counter-Strike: Source (classic FPS)"
+    "TF2" "Team Fortress 2 (team shooter)"
+    "CSGO" "Counter-Strike: Global Offensive (competitive)"
+    "L4D2" "Left 4 Dead 2 (co-op zombie shooter)"
+    "HL2DM" "Half-Life 2 Deathmatch (fast-paced DM)")
+
+  GAME=$(dialog --clear --title "Select Game Server" \
+    --menu "Choose the game to install:" 12 61 5 \
+    "${GAMES[@]}" \
+    3>&1 1>&2 2>&3)
+
+  clear
+  if [ -z "$GAME" ]; then
+    echo "No game selected. Exiting."
+    exit 1
+  fi
+
+  echo "You selected: $GAME"
+}
+
+################################################################################
+# map game to appid
+################################################################################
+
+get_appid() {
+  case "$GAME" in
+  "CSS") APPID=232330 ;;
+  "TF2") APPID=232250 ;;
+  "CSGO") APPID=740 ;;
+  "L4D2") APPID=222860 ;;
+  "HL2DM") APPID=232370 ;;
+  *)
+    echo "Unknown game, cannot get AppID"
+    exit 1
+    ;;
+  esac
+  echo "AppID for $GAME is $APPID"
+}
+
+################################################################################
+# setup steamcmd and game dir
+################################################################################
+
+setup_steamcmd() {
+  sudo -u steam bash <<EOF
+# Create SteamCMD directory
+mkdir -p ~/steamcmd && cd ~/steamcmd
+# Download SteamCMD if needed
+if [ ! -f steamcmd_linux.tar.gz ]; then
+    wget https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
+fi
+# Extract SteamCMD if needed
+if [ ! -f steamcmd.sh ]; then
+    tar -xvzf steamcmd_linux.tar.gz
+    chmod +x steamcmd.sh
+fi
+# Create proper game server directory
+GAME_DIR=~/Steam/${GAME}_server
+mkdir -p "\$GAME_DIR"
+EOF
+}
+
+################################################################################
+# install/update game server
+################################################################################
+
+install_game_server() {
+  echo "Installing or updating $GAME server (appid $APPID)..."
+  SERVER_DIR="$HOME_INSTALL/Steam/${GAME}_server"
+  # automatically detect game folder in server directory
+  # assume $SERVER_DIR points to ~/Steam/${GAME}_server
+  for FOLDER in "$SERVER_DIR"/*; do
+    if [ -d "$FOLDER" ]; then
+      case "$(basename "$FOLDER")" in
+      cstrike | tf | csgo | hl2mp | left4dead2)
+        GAME_DIR=$(basename "$FOLDER")
+        break # stop loop once detected
+        ;;
+      esac
+    fi
+  done
+  sudo -u steam bash "$HOME_INSTALL/steamcmd/steamcmd.sh" \
+    +force_install_dir "$SERVER_DIR" \
+    +login anonymous \
+    +app_update $APPID validate \
+    +quit
+}
+
+################################################################################
+# create configuration (srcds.conf)
+################################################################################
+
+function create_configuration() {
+  echo "# Configuration file
+
+STEAMCMD_DIR=$HOME_INSTALL/steamcmd
+SRCDS_DIR=$HOME_INSTALL/Steam/${GAME}_server
+
+SERVER_MAP=de_dust
+SERVER_MAX=20
+SERVER_PORT=27015
+SERVER_IP=0.0.0.0
+SERVER_GAME=$GAME_DIR" >"$HOME_INSTALL"/bin/include/srcds.conf
+}
+
+################################################################################
+# main execution
+################################################################################
+
+install_dependencies
+select_game
+get_appid
+setup_steamcmd
+install_game_server
+create_configuration
+
+################################################################################
+
+# fix ownership
+sudo chown -R steam:steam "$HOME_INSTALL"
+
+################################################################################
+
+clear
+echo "
+The $GAME server has been installed here:
+ - $HOME_INSTALL/Steam/${GAME}_server
+
+Next step (manual):
+sudo su - steam          <-- Switching user.
+srcds_menu
+
+IMPORTANT: The installer does not switch users automatically.
+"
+
+# END
