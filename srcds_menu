@@ -371,10 +371,6 @@ function srcds_update() {
   chmod +x "$HOME"/bin/srcds_menu
   chmod +x "$HOME"/bin/include/start_srcds
 
-  # update version file
-  LOC_V=$(wc -l <"$HOME"/bin/srcds_menu)
-  echo "v$LOC_V" >"$HOME/bin/version"
-
   # dialog output
   dialog --msgbox "srcds_menu file updated successfully." 5 41
 
