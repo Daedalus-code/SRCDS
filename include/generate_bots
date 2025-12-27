@@ -1,0 +1,287 @@
+#!/bin/bash
+
+################################################################################
+#
+# SRCDS Tools & Options
+# Author: Daedalus-code
+#
+# License: GNU General Public License v3.0
+# Description: A menu-driven shell script for managing SRCDS servers, bots,
+#              data usage, crontab tasks, disk usage, map compression, and
+#              password generation.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this script. If not, see <https://www.gnu.org/licenses/>.
+#
+################################################################################
+
+source "$HOME/bin/include/srcds.conf"
+
+################################################################################
+# generate bots
+################################################################################
+
+function generate_bots() {
+
+  BOT_DIFFICULTY=$(grep -E "^bot_difficulty" "$SRCDS_DIR/$SERVER_GAME/cfg/server.cfg" | awk '{print $2}')
+  BOT_DIFFICULTY=${BOT_DIFFICULTY:-2}
+
+  if [[ ! -s "$BOTDIR/names.txt" ]]; then
+    dialog --msgbox "No names found in names.txt!" 5 32
+    return 1
+  fi
+
+  # use names.txt as source
+  mapfile -t NAMES <"$BOTDIR/names.txt"
+
+  select_random() {
+    local ARR=("$@")
+    echo "${ARR[$((RANDOM % ${#ARR[@]}))]}"
+  }
+
+  USED_NAMES=()
+
+  # ############################################################################
+  # difficulty-based name pools
+  # ############################################################################
+
+  NOOB_NAMES=()
+  CASUAL_NAMES=()
+  PRO_NAMES=()
+  ELITE_NAMES=()
+  NEUTRAL_NAMES=()
+
+  for N in "${NAMES[@]}"; do
+    case "$N" in
+    noob_*) NOOB_NAMES+=("${N#noob_}") ;;
+    casual_*) CASUAL_NAMES+=("${N#casual_}") ;;
+    pro_*) PRO_NAMES+=("${N#pro_}") ;;
+    elite_*) ELITE_NAMES+=("${N#elite_}") ;;
+    *) NEUTRAL_NAMES+=("$N") ;;
+    esac
+  done
+
+  get_unique_name() {
+    local DIFF="$1"
+    local POOL=()
+
+    case "$DIFF" in
+    Easy) POOL=("${NOOB_NAMES[@]}" "${NEUTRAL_NAMES[@]}") ;;
+    Normal) POOL=("${CASUAL_NAMES[@]}" "${NEUTRAL_NAMES[@]}") ;;
+    Hard) POOL=("${PRO_NAMES[@]}" "${NEUTRAL_NAMES[@]}") ;;
+    Expert) POOL=("${ELITE_NAMES[@]}" "${NEUTRAL_NAMES[@]}") ;;
+    esac
+
+    [[ ${#POOL[@]} -eq 0 ]] && POOL=("${NAMES[@]}")
+
+    local NAME
+    while true; do
+      NAME=$(select_random "${POOL[@]}")
+      [[ ! " ${USED_NAMES[*]} " =~ " $NAME " ]] && break
+    done
+    USED_NAMES+=("$NAME")
+    echo "$NAME"
+  }
+
+  # ############################################################################
+  # ask number of bots
+  # ############################################################################
+
+  dialog --inputbox "($(wc -l "$BOTDIR/names.txt" | awk '{ print $1 }')) Names | Enter number:" 7 46 20 2>/tmp/bot_count
+  NUM_PROFILES=$(cat /tmp/bot_count)
+
+  [[ -z "$NUM_PROFILES" || "$NUM_PROFILES" -le 0 ]] && return 1
+
+  # ############################################################################
+  # write header (default + templates ONCE)
+  # ############################################################################
+
+  cat >botprofile.db <<'EOF'
+Default
+    Skill = 50
+    Aggression = 50
+    ReactionTime = 0.3
+    AttackDelay = 0
+    Teamwork = 75
+    WeaponPreference = none
+    Cost = 0
+    Difficulty = NORMAL
+    VoicePitch = 100
+    Skin = 0
+End
+
+Template Easy
+    Skill = 25
+    Aggression = 25
+    ReactionTime = 0.6
+    Cost = 1
+    Difficulty = EASY
+End
+
+Template Normal
+    Skill = 50
+    Aggression = 50
+    ReactionTime = 0.4
+    Cost = 2
+    Difficulty = NORMAL
+End
+
+Template Hard
+    Skill = 75
+    Aggression = 75
+    ReactionTime = 0.25
+    Cost = 3
+    Difficulty = HARD
+End
+
+Template Expert
+    Skill = 90
+    Aggression = 90
+    ReactionTime = 0.2
+    Cost = 4
+    Difficulty = EXPERT
+End
+
+Template Rifle
+    WeaponPreference = ak47
+    WeaponPreference = m4a1
+    WeaponPreference = aug
+    WeaponPreference = famas
+    WeaponPreference = galil
+    WeaponPreference = sg552
+    WeaponPreference = scout
+    WeaponPreference = mp5
+    WeaponPreference = deagle
+End
+
+Template Sniper
+    AttackDelay = 0.3
+    WeaponPreference = awp
+    WeaponPreference = sg550
+    WeaponPreference = g3sg1
+    WeaponPreference = scout
+    WeaponPreference = deagle
+End
+
+Template Shotgun
+    WeaponPreference = xm1014
+    WeaponPreference = m3
+    WeaponPreference = p90
+    WeaponPreference = deagle
+End
+
+Template Spray
+    WeaponPreference = p90
+    WeaponPreference = mp5
+    WeaponPreference = mac10
+    WeaponPreference = ump
+    WeaponPreference = deagle
+End
+EOF
+
+  # ############################################################################
+  # difficulty pools (Valve-like)
+  # ############################################################################
+
+  case "$BOT_DIFFICULTY" in
+  1) DIFF_POOL=(Easy Normal) ;;
+  2) DIFF_POOL=(Normal Hard) ;;
+  3) DIFF_POOL=(Hard Expert) ;;
+  esac
+  WEAPON_POOL=(Rifle Sniper Shotgun Spray)
+
+  # ############################################################################
+  # random helpers
+  # ############################################################################
+
+  rand_range() { echo $((RANDOM % ($2 - $1 + 1) + $1)); }
+  rand_float() { awk -v min="$1" -v max="$2" 'BEGIN{srand(); printf "%.2f", min+rand()*(max-min)}'; }
+
+  # ############################################################################
+  # generate bots
+  # ############################################################################
+
+  (
+    for ((i = 1; i <= NUM_PROFILES; i++)); do
+      DIFF=$(select_random "${DIFF_POOL[@]}")
+      NAME=$(get_unique_name "$DIFF")
+      SKIN=$((RANDOM % 5))
+      VOICE=$((RANDOM % 44 + 85))
+
+      # difficulty-based skill curves
+      case "$DIFF" in
+      Easy)
+        SKILL=$(rand_range 20 30)
+        AGGR=$(rand_range 20 30)
+        REACT=$(rand_float 0.55 0.65)
+        # weapon bias: Spray > Shotgun > Rifle > Sniper
+        WEAPON=$(select_random "Spray" "Spray" "Shotgun" "Rifle" "Sniper")
+        ;;
+      Normal)
+        SKILL=$(rand_range 45 55)
+        AGGR=$(rand_range 45 55)
+        REACT=$(rand_float 0.38 0.45)
+        # weapon bias: Rifle > Spray > Shotgun > Sniper
+        WEAPON=$(select_random "Rifle" "Rifle" "Spray" "Shotgun" "Sniper")
+        ;;
+      Hard)
+        SKILL=$(rand_range 70 80)
+        AGGR=$(rand_range 70 80)
+        REACT=$(rand_float 0.22 0.28)
+        # weapon bias: Rifle > Sniper > Spray > Shotgun
+        WEAPON=$(select_random "Rifle" "Rifle" "Sniper" "Spray" "Shotgun")
+        ;;
+      Expert)
+        SKILL=$(rand_range 85 95)
+        AGGR=$(rand_range 85 95)
+        REACT=$(rand_float 0.18 0.22)
+        # weapon bias: Sniper > Rifle > Spray > Shotgun
+        WEAPON=$(select_random "Sniper" "Sniper" "Rifle" "Spray" "Shotgun")
+        ;;
+      esac
+
+      # small chance to troll with knife (5%)
+      if ((RANDOM % 100 < 5)); then
+        WEAPON="Knife"
+      fi
+
+      cat >>botprofile.db <<EOF
+$DIFF+$WEAPON "$NAME"
+    Skill = $SKILL
+    Aggression = $AGGR
+    ReactionTime = $REACT
+    Skin = $SKIN
+    VoicePitch = $VOICE
+End
+
+EOF
+      echo $((i * 100 / NUM_PROFILES))
+      echo "Generating bot $i of $NUM_PROFILES"
+    done
+  ) | dialog --gauge "Generating bot profiles..." 6 50 0
+
+  # ############################################################################
+  # install
+  # ############################################################################
+
+  dialog --msgbox "Bot profile generation complete!" 5 36
+  dialog --yesno "Install generated botprofile.db?" 5 40
+  if [[ $? -eq 0 ]]; then
+    mkdir -p "$SRCDS_DIR/$SERVER_GAME/custom/bots"
+    RAND_SUFFIX=$((RANDOM % 10000))
+    mv botprofile.db "$SRCDS_DIR/$SERVER_GAME/custom/bots/botprofile_$RAND_SUFFIX.db"
+    dialog --msgbox "Installed as botprofile_$RAND_SUFFIX.db\nBots: $NUM_PROFILES" 6 44
+  fi
+}
+
+# END
