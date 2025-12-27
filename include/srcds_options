@@ -1,0 +1,229 @@
+#!/bin/bash
+
+################################################################################
+#
+# SRCDS Tools & Options
+# Author: Daedalus-code
+#
+# License: GNU General Public License v3.0
+# Description: A menu-driven shell script for managing SRCDS servers, bots,
+#              data usage, crontab tasks, disk usage, map compression, and
+#              password generation.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this script. If not, see <https://www.gnu.org/licenses/>.
+#
+################################################################################
+
+# tools & options
+function srcds_options() {
+  while true; do
+    HEIGHT="13"
+    WIDTH="54"
+    CHOICE_HEIGHT="6"
+    MENU="SRCDS Tools & Options"
+
+    OPTIONS=(
+      1 "Bots             Bot management options"
+      2 "Data Usage       Monitor network data"
+      3 "crontab          Manage scheduled tasks"
+      4 "ncdu             NCurses disk usage viewer"
+      5 "Compress         Faster upload for maps"
+      6 "Random           Password generator"
+    )
+
+    CHOICE=$(dialog --clear \
+      --menu "$MENU" \
+      $HEIGHT $WIDTH $CHOICE_HEIGHT \
+      "${OPTIONS[@]}" \
+      3>&1 1>&2 2>&3)
+    EXIT_STATUS=$?
+    clear
+
+    # Exit loop if Cancel/ESC pressed
+    if [ $EXIT_STATUS -ne 0 ]; then
+      break
+    fi
+
+    case $CHOICE in
+
+    "1")
+
+      ##########################################################################
+      # bot options
+      ##########################################################################
+
+      mkdir -p "$SRCDS_DIR"/"$SERVER_GAME"/custom/bots
+      BOTDIR="$SRCDS_DIR/$SERVER_GAME/custom/bots"
+
+      # copy over extra db if not found
+      if [[ ! -f "$BOTDIR"/Realistic_AI.db ]]; then
+        cp "$HOME"/bin/include/extra/bots/Realistic_AI.db "$BOTDIR"
+      fi
+
+      HEIGHT="10"
+      WIDTH="60"
+      CHOICE_HEIGHT="3"
+      MENU="Bot Options"
+
+      OPTIONS=(
+        1 "New Bots       Generate new bot profiles"
+        2 "Names.txt      Manage names for bot generation"
+        3 "Switch DB      Switch active bot profile database"
+      )
+
+      CHOICE=$(dialog --clear \
+        --menu "$MENU" \
+        $HEIGHT $WIDTH $CHOICE_HEIGHT \
+        "${OPTIONS[@]}" \
+        2>&1 >/dev/tty)
+
+      clear
+      case $CHOICE in
+
+      "1")
+
+        generate_bots
+        ;;
+
+      "2")
+
+        dialog --msgbox "Sorting $(wc -l "$BOTDIR"/names.txt | awk '{ print $1 }') names, keeping uniq" 5 "$(echo "$(wc -L "$BOTDIR"/names.txt | awk '{ print $1 }')+20" | bc 2>/dev/null)"
+        echo "$(cat "$BOTDIR"/names.txt 2>/dev/null | sort | uniq)" >/tmp/nm.tmp
+        mv /tmp/nm.tmp "$BOTDIR"/names.txt
+        nano "$BOTDIR"/names.txt
+        ;;
+
+      "3")
+
+        # check that the directory exists
+        [[ -d "$BOTDIR" ]] || {
+          echo "Bot directory not found: $BOTDIR"
+        }
+
+        # function to count names in a db
+        count_names() {
+          DB_FILE="$1"
+          [[ -f "$DB_FILE" ]] || {
+            echo 0
+            return
+          }
+          grep "+" "$DB_FILE" | grep -v "=" | wc -l
+        }
+
+        # get current active db
+        ACTIVE_DB="$BOTDIR/botprofile.db"
+
+        # build menu dynamically with columns
+        MENU=()
+        i=1
+        MAX_NAME_LEN=20 # adjust as needed for column width
+        for DB in "$BOTDIR"/*.db; do
+          [[ -f "$DB" ]] || continue
+          NAME=$(basename "$DB")
+          COUNT=$(count_names "$DB")
+          ACTIVE=""
+          [[ "$DB" == "$ACTIVE_DB" ]] && ACTIVE="<- Active"
+          # column formatting: name | count | active
+          LABEL=$(printf "%-${MAX_NAME_LEN}s %5s %s" "$NAME" "Names: $COUNT" "$ACTIVE")
+          MENU+=("$i" "$LABEL")
+          ((i++))
+        done
+
+        TOTAL_PROFILES=$(ls "$BOTDIR"/*.db 2>/dev/null | wc -l)
+        LENGTH="$((TOTAL_PROFILES + 7))"
+        # calculate WIDTH dynamically based on longest LABEL
+        WIDTH=$(printf "%s\n" "${MENU[@]}" | awk '{print length($0)}' | sort -nr | head -n1)
+        WIDTH=$((WIDTH + 11))
+
+        # show dialog menu
+        CHOICE=$(dialog --menu "Profiles available: $TOTAL_PROFILES" "$LENGTH" "$WIDTH" 10 "${MENU[@]}" 3>&1 1>&2 2>&3)
+        EXIT_STATUS=$?
+        clear
+
+        # exit immediately on Cancel/ESC
+        if [ $EXIT_STATUS -ne 0 ]; then
+          continue
+        fi
+
+        # get the selected DB path
+        SELECTED_DB=$(ls "$BOTDIR"/*.db | sed -n "${CHOICE}p")
+        SELECTED_NAME=$(basename "$SELECTED_DB")
+
+        # skip if already active
+        if [[ "$SELECTED_DB" != "$ACTIVE_DB" ]]; then
+          # move selected DB to botprofile.db
+          cp "$SELECTED_DB" "${BOTDIR}_2"
+          mv "$SELECTED_DB" "$BOTDIR/botprofile.db"
+        fi
+        dialog --msgbox "Bot profile updated $SELECTED_NAME" 5 50
+        ;;
+      esac
+      ;;
+
+      ##########################################################################
+
+    "2")
+
+      data_usage
+      ;;
+
+    "3")
+      dialog --msgbox "Awards generation and database cleanup (daily at midnight)
+Server restart check (every 5 minutes)
+Daemon restart check (every 5 minutes)
+
+15 00 * * * cd $HOME/HLstatsX && ./hlstats-awards.pl >>$HOME/bin/include/cron.log 2>&1
+*/5 * * * * cd $HOME/HLstatsX && ./run_hlstats start >>$HOME/bin/include/cron.log 2>&1
+*/5 * * * * cd $HOME/bin/include && ./start_srcds >>$HOME/bin/include/cron.log 2>&1" 11 105
+      crontab -e
+      ;;
+
+    "4")
+
+      ncdu "$HOME"
+      ;;
+
+    "5")
+
+      # compress maps for faster upload
+      find "$SRCDS_DIR"/"$SERVER_GAME"/maps -name "*.bsp" -exec sh -c '
+      [ ! -f "$1.bz2" ] && bzip2 -k -1 "$1"
+    ' sh {} \;
+      dialog --msgbox "$(ls -lSh "$SRCDS_DIR"/"$SERVER_GAME"/maps)" 0 0
+      ;;
+
+    "6")
+      dialog --inputbox "Enter the number of characters:" 7 36 10 2>/tmp/psam.tmp
+      EXIT_STATUS=$?
+      PASS_AMOUNT="$(cat /tmp/psam.tmp 2>/dev/null)"
+
+      # go back to main menu if Cancel/ESC or empty input
+      if [ $EXIT_STATUS -ne 0 ] || [[ -z "$PASS_AMOUNT" ]]; then
+        continue # return to main menu loop
+      fi
+
+      PASS_LENGTH=${1:-$PASS_AMOUNT}
+      clear
+      echo "Password length: $PASS_LENGTH
+
+$(base64 </dev/urandom | head -c $PASS_LENGTH | rev | cut -c 2- | rev | tr -d '\n')
+      "
+      exit 0 # only exit if password was actually generated
+      ;;
+    esac
+  done
+  return 0
+}
+
+# END
