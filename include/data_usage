@@ -1,0 +1,114 @@
+#!/bin/bash
+
+################################################################################
+#
+# SRCDS Tools & Options
+# Author: Daedalus-code
+#
+# License: GNU General Public License v3.0
+# Description: A menu-driven shell script for managing SRCDS servers, bots,
+#              data usage, crontab tasks, disk usage, map compression, and
+#              password generation.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this script. If not, see <https://www.gnu.org/licenses/>.
+#
+################################################################################
+
+data_usage() {
+
+  # detect default interface
+  INTERFACE=$(ip route | awk '/default/ {print $5; exit}')
+  [[ -z "$INTERFACE" ]] && {
+    echo "No active interface found"
+    exit 1
+  }
+
+  # read RX/TX bytes
+  get_rx_bytes() { cat /sys/class/net/"$INTERFACE"/statistics/rx_bytes; }
+  get_tx_bytes() { cat /sys/class/net/"$INTERFACE"/statistics/tx_bytes; }
+
+  RX_BYTES=$(get_rx_bytes)
+  TX_BYTES=$(get_tx_bytes)
+
+  # system uptime (seconds)
+  UPTIME_SEC=$(awk -F. '{print $1}' /proc/uptime)
+
+  # format uptime
+  UPTIME_FMT=$(printf '%dh:%dm:%ds' \
+    $((UPTIME_SEC / 3600)) \
+    $((UPTIME_SEC % 3600 / 60)) \
+    $((UPTIME_SEC % 60)))
+
+  # bytes per second
+  RX_BPS=$(bc -l <<<"$RX_BYTES / $UPTIME_SEC")
+  TX_BPS=$(bc -l <<<"$TX_BYTES / $UPTIME_SEC")
+
+  # convert bytes to readable units
+  to_units() {
+    local b=$1
+    awk -v b="$b" '
+        BEGIN {
+          split("B KB MB GB TB",u)
+          for(i=1;b>=1024&&i<5;i++) b/=1024
+          printf "%.3f %s", b, u[i]
+        }'
+  }
+
+  # convert rate
+  to_rate() { echo "$(to_units "$1")/s"; }
+
+  # time multipliers
+  DAY=86400
+  WEEK=604800
+  MONTH=2419200
+  YEAR=29030400
+
+  # RX projections
+  RX_DAY=$(to_units "$(bc -l <<<"$RX_BPS*$DAY")")
+  RX_WEEK=$(to_units "$(bc -l <<<"$RX_BPS*$WEEK")")
+  RX_MONTH=$(to_units "$(bc -l <<<"$RX_BPS*$MONTH")")
+  RX_YEAR=$(to_units "$(bc -l <<<"$RX_BPS*$YEAR")")
+
+  # TX projections
+  TX_DAY=$(to_units "$(bc -l <<<"$TX_BPS*$DAY")")
+  TX_WEEK=$(to_units "$(bc -l <<<"$TX_BPS*$WEEK")")
+  TX_MONTH=$(to_units "$(bc -l <<<"$TX_BPS*$MONTH")")
+  TX_YEAR=$(to_units "$(bc -l <<<"$TX_BPS*$YEAR")")
+
+  RESULT="
+  Interface..: $INTERFACE
+  Uptime.....: $UPTIME_FMT
+
+  Download (RX)
+  ------------------------------
+  Current....: $(to_rate "$RX_BPS")
+  Daily......: $RX_DAY
+  Weekly.....: $RX_WEEK
+  Monthly....: $RX_MONTH
+  Yearly.....: $RX_YEAR
+
+  Upload (TX)
+  ------------------------------
+  Current....: $(to_rate "$TX_BPS")
+  Daily......: $TX_DAY
+  Weekly.....: $TX_WEEK
+  Monthly....: $TX_MONTH
+  Yearly.....: $TX_YEAR
+  "
+
+  WIDTH=$(($(echo "$RESULT" | wc -L) + 5))
+  dialog --title "Data Usage Statistics" --msgbox "$RESULT" 24 "$WIDTH"
+}
+
+# END
