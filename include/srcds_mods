@@ -253,8 +253,8 @@ srcds_mods() {
   MM_DIR="$ADDONS_DIR/metamod"
 
   # detect status
-  SM_INSTALLED=$([ -d "$SM_DIR" ] && echo "OK" || echo "!!")
-  MM_INSTALLED=$([ -d "$MM_DIR" ] && echo "OK" || echo "!!")
+  SM_INSTALLED=$([ -d "$SM_DIR" ] && echo "Installed" || echo "Missing!")
+  MM_INSTALLED=$([ -d "$MM_DIR" ] && echo "Installed" || echo "Missing!")
 
   SM_VER="-"
   MM_VER="-"
@@ -316,7 +316,7 @@ srcds_mods() {
   ##############################################################################
 
   if [ -d "$HLSTATSX_DIR" ]; then
-    HLSTATSX_INSTALLED="OK"
+    HLSTATSX_INSTALLED="Installed"
 
     HLSTATSX_VER=$(
       perl -ne 'print $1 if /^\s*\$g_version\s*=\s*[\"\x27]([^\"\x27]+)/' \
@@ -326,7 +326,7 @@ srcds_mods() {
 
     [ -z "$HLSTATSX_VER" ] && HLSTATSX_VER="unknown"
   else
-    HLSTATSX_INSTALLED="!"
+    HLSTATSX_INSTALLED="Missing!"
     HLSTATSX_VER="unknown"
   fi
 
