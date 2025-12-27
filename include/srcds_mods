@@ -332,7 +332,7 @@ srcds_mods() {
 
   ##############################################################################
 
-  HLSTATSX_PID=$(pgrep -f hlstats.pl)
+  HLSTATSX_PID=$(pgrep hlstats.pl)
 
   if [[ -n "$HLSTATSX_PID" ]]; then
     ELAPSED=$(ps -p "$HLSTATSX_PID" -o etime= | tr -d ' ')
