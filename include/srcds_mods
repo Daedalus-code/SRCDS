@@ -369,19 +369,19 @@ srcds_mods() {
   ##############################################################################
 
   # info table text
-  INFO="MetaMod   : $MM_INSTALLED
-Installed : $MM_VER
-Latest    : $MM_LATEST_VER
+  INFO="MetaMod...: $MM_INSTALLED
+Installed.: $MM_VER
+Latest....: $MM_LATEST_VER
 
-SourceMod : $SM_INSTALLED
-Installed : $SM_VER
-Latest    : $SM_LATEST_VER
+SourceMod.: $SM_INSTALLED
+Installed.: $SM_VER
+Latest....: $SM_LATEST_VER
 
-Plugins   : $PLUGIN_INFO
+Plugins...: $PLUGIN_INFO
 
-HLstatsX  : $HLSTATSX_INSTALLED
-Installed : $HLSTATSX_VER
-Daemon    : $HLSTATX_STATUS"
+HLstatsX..: $HLSTATSX_INSTALLED
+Installed.: $HLSTATSX_VER
+Daemon....: $HLSTATX_STATUS"
 
   # menu
   CHOICE=$(dialog --clear \
