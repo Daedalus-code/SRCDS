@@ -253,8 +253,8 @@ srcds_mods() {
   MM_DIR="$ADDONS_DIR/metamod"
 
   # detect status
-  SM_INSTALLED=$([ -d "$SM_DIR" ] && echo "Yes" || echo "Not installed!")
-  MM_INSTALLED=$([ -d "$MM_DIR" ] && echo "Yes" || echo "Not installed!")
+  SM_INSTALLED=$([ -d "$SM_DIR" ] && echo "OK" || echo "!!")
+  MM_INSTALLED=$([ -d "$MM_DIR" ] && echo "OK" || echo "!!")
 
   SM_VER="-"
   MM_VER="-"
@@ -316,15 +316,18 @@ srcds_mods() {
   ##############################################################################
 
   if [ -d "$HLSTATSX_DIR" ]; then
-    HLSTATSX_INSTALLED="Yes"
-    # Optional: if HLstatsX has a VERSION file
-    if [ -f "$HLSTATSX_DIR/VERSION" ]; then
-      HLSTATSX_VER=$(cat "$HLSTATSX_DIR/VERSION")
-    else
-      HLSTATSX_VER="(unknown version)"
-    fi
+    HLSTATSX_INSTALLED="OK"
+
+    HLSTATSX_VER=$(
+      perl -ne 'print $1 if /^\s*\$g_version\s*=\s*[\"\x27]([^\"\x27]+)/' \
+        "$HLSTATSX_DIR/HLstats.plib" \
+        "$HLSTATSX_DIR/hlstats.pl" 2>/dev/null | head -n1
+    )
+
+    [ -z "$HLSTATSX_VER" ] && HLSTATSX_VER="unknown"
   else
-    HLSTATSX_INSTALLED="No"
+    HLSTATSX_INSTALLED="!"
+    HLSTATSX_VER="unknown"
   fi
 
   ##############################################################################
@@ -343,13 +346,13 @@ srcds_mods() {
       MINUTES=${BASH_REMATCH[2]}
       SECONDS=${BASH_REMATCH[3]}
     else
-      HOURS=0
-      MINUTES=0
-      SECONDS=0
+      HOURS="0"
+      MINUTES="0"
+      SECONDS="0"
     fi
-    HLSTATX_STATUS="($HLSTATSX_PID) $(printf "%02dh:%02dm:%02ds" "$HOURS" "$MINUTES" "$SECONDS")"
+    HLSTATX_STATUS="$(printf "%02dh:%02dm:%02ds" "$HOURS" "$MINUTES" "$SECONDS")"
   else
-    HLSTATX_STATUS="Not running"
+    HLSTATX_STATUS="Offline"
   fi
 
   ##############################################################################
@@ -364,30 +367,36 @@ srcds_mods() {
   DISABLED=("$SM_PLUGINS_DIR/disabled"/*.smx)
   shopt -u nullglob
 
-  PLUGIN_INFO="${#ENABLED[@]} enabled / ${#DISABLED[@]} disabled"
+  # if zero
+  if [[ -z "$ENABLED" ]]; then
+    ENABLED="0"
+  fi
+  if [[ -z "$DISABLED" ]]; then
+    DISABLED="0"
+  fi
+
+  PLUGIN_INFO="Plugins....: ${#ENABLED[@]} Enabled - ${#DISABLED[@]} Disabled"
 
   ##############################################################################
 
   # info table text
-  INFO="MetaMod...: $MM_INSTALLED
-Installed.: $MM_VER
-Latest....: $MM_LATEST_VER
-
-SourceMod.: $SM_INSTALLED
-Installed.: $SM_VER
-Latest....: $SM_LATEST_VER
-
-Plugins...: $PLUGIN_INFO
-
-HLstatsX..: $HLSTATSX_INSTALLED
-Installed.: $HLSTATSX_VER
-Daemon....: $HLSTATX_STATUS"
+  INFO="MetaMod....: $MM_VER [$MM_INSTALLED]
+Latest.....: $MM_LATEST_VER
+-
+SourceMod..: $SM_VER [$SM_INSTALLED]
+Latest.....: $SM_LATEST_VER
+-
+HLstatsX...: $HLSTATSX_VER [$HLSTATSX_INSTALLED]
+hlstats.pl.: $HLSTATX_STATUS
+"
 
   # menu
   CHOICE=$(dialog --clear \
     --title "Mods" \
-    --no-collapse --menu "$INFO" \
-    23 43 4 \
+    --no-collapse --menu "$(echo "$INFO" | column -t)
+
+$PLUGIN_INFO" \
+    20 44 4 \
     1 "MetaMod          Manage MM" \
     2 "SourceMod        Manage SM" \
     3 "Plugins          Manage Plugins" \
