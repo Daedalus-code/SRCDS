@@ -1,0 +1,730 @@
+#!/bin/bash
+
+################################################################################
+#
+# SRCDS Tools & Options
+# Author: Daedalus-code
+#
+# License: GNU General Public License v3.0
+# Description: A menu-driven shell script for managing SRCDS servers, bots,
+#              data usage, crontab tasks, disk usage, map compression, and
+#              password generation.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this script. If not, see <https://www.gnu.org/licenses/>.
+#
+################################################################################
+
+exec </dev/tty >/dev/tty 2>&1
+
+################################################################################
+
+source "$HOME/bin/include/srcds.conf"
+source "$HOME/bin/include/generate_bots"
+source "$HOME/bin/include/data_usage"
+source "$HOME/bin/include/srcds_options"
+source "$HOME/bin/include/srcds_mods"
+
+################################################################################
+# install
+################################################################################
+
+# update version file
+LOC_V=$(wc -l <"$HOME"/bin/srcds_menu)
+echo "v$LOC_V" >"$HOME/bin/version"
+
+################################################################################
+# srcds version
+################################################################################
+
+SCAN_FILE="$HOME/bin/srcds_menu"
+VERSION_FILE="$HOME/bin/version"
+
+if [[ -z "$VERSION_FILE" ]]; then
+  VERSION_FILE="Update please.."
+fi
+
+# ensure version file exists or initialize it
+if [[ ! -f "$VERSION_FILE" ]]; then
+  SCRIPT_VERSION="v$([[ -f "$SCAN_FILE" ]] && wc -l <"$SCAN_FILE" || echo 'N/A')"
+  echo "$SCRIPT_VERSION" >"$VERSION_FILE"
+fi
+
+# read version, remove whitespace
+SCRIPT_VERSION=$(<"$VERSION_FILE")
+SCRIPT_VERSION="${SCRIPT_VERSION//[[:space:]]/}"
+
+################################################################################
+# SRCDS console (screen)
+################################################################################
+
+function srcds_console() {
+  if ! screen -list 2>/dev/null | grep -q "[.]srcds_screen"; then
+    dialog --msgbox "Server not running!" 5 24
+    return 1
+  fi
+  dialog --msgbox "CTRL A+D for soft exit (detach)" 5 36
+  screen -r srcds_screen
+}
+
+################################################################################
+# SRCDS start
+################################################################################
+
+srcds_start() {
+  # if already running
+  if screen -list 2>/dev/null | grep -q "[.]srcds_screen"; then
+
+    SRCDS_PID_INFO="$(ps -p "$(pgrep srcds_linux 2>/dev/null)" 2>/dev/null | column -t)"
+
+    dialog --no-collapse --msgbox "Server already running!
+
+$SRCDS_PID_INFO" 0 0
+    # return to menu
+    return 1
+  fi
+  # start stats
+  cd "$HLSTATSX_DIR" && ./run_hlstats start
+  # start server
+  bash "$HOME"/bin/include/start_srcds
+  dialog --msgbox "Server and daemon started!" 5 32
+}
+
+################################################################################
+# SRCDS stop
+################################################################################
+
+srcds_stop() {
+  if [[ ! -z "$SRCDS_PID" ]]; then
+    dialog --yesno "Stop server and daemon?" 5 29
+    [[ ! $? == 0 ]] && return 1
+    # stop stats
+    cd "$HLSTATSX_DIR" && ./run_hlstats stop &>/dev/null
+    # stop server
+    screen -X -S srcds_screen quit &>/dev/null
+    if [[ "$SRCDS_PID" -gt "0" ]]; then
+      kill -9 "$SRCDS_PID" &>/dev/null
+    fi
+    WIDTH="$(echo "$(echo "Stopped SRCDS and HLstatsX ($SRCDS_PID/$SCREEN_PID)" | wc -L)+4" | bc 2>/dev/null)"
+    dialog --msgbox "Stopped SRCDS and HLstatsX ($SRCDS_PID/$SCREEN_PID)" 5 "$WIDTH"
+  else
+    dialog --msgbox "Server is not running!" 5 28
+  fi
+}
+
+################################################################################
+# srcds configurations
+################################################################################
+
+function srcds_configs() {
+  MENU="SRCDS Configurations"
+
+  CONFIG_DIRS=(
+    "$HOME/bin/include"
+    "$HOME/HLstatsX"
+    "$SRCDS_DIR/$SERVER_GAME/cfg"
+    "$SRCDS_DIR/$SERVER_GAME/cfg/cssdm"
+    "$SRCDS_DIR/$SERVER_GAME/cfg/metamod"
+    "$SRCDS_DIR/$SERVER_GAME/cfg/sourcemod"
+    "$SRCDS_DIR/$SERVER_GAME/addons/sourcemod/configs"
+    "$SRCDS_DIR/$SERVER_GAME/addons/sourcemod/gamedata"
+  )
+
+  OPTIONS=()
+  FILES=()
+  i=0
+  MAXLEN=0
+
+  for DIR in "${CONFIG_DIRS[@]}"; do
+    [[ -d "$DIR" ]] || continue
+    while IFS= read -r FILE; do
+      LABEL="${FILE#$SRCDS_DIR/}"
+      OPTIONS+=("$i" "$LABEL")
+      FILES[$i]="$FILE"
+
+      LEN=${#LABEL}
+      ((LEN > MAXLEN)) && MAXLEN=$LEN
+
+      ((i++))
+    done < <(
+      find "$DIR" -maxdepth 1 -type f \
+        \( -name "*.cfg" -o -name "*.conf" -o -name "*.ini" -o -name "*.txt" \) |
+        sort
+    )
+  done
+
+  HEIGHT="25"
+  CHOICE_HEIGHT="20"
+  WIDTH=$((MAXLEN + 12))
+
+  CHOICE=$(dialog --clear \
+    --menu "$MENU" \
+    $HEIGHT $WIDTH $CHOICE_HEIGHT \
+    "${OPTIONS[@]}" \
+    2>&1 >/dev/tty)
+
+  STATUS=$?
+  clear
+
+  # cancel
+  if [[ $STATUS -ne 0 ]]; then
+    return
+  fi
+
+  nano "${FILES[$CHOICE]}"
+  srcds_configs
+}
+
+################################################################################
+# srcds logs
+################################################################################
+
+function srcds_logs() {
+
+  # total log lines
+  TOTAL_LINES="$(wc -l "$HOME"/bin/include/cron.log "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | tail -1 | awk '{ print $1 }')"
+  TOTAL_SIZE=$(stat -c%s "$HOME"/bin/include/cron.log "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | awk '{sum += $1} END {print sum}')
+
+  if [[ $TOTAL_SIZE -ge 1073741824 ]]; then
+    TOTAL_SIZE="$(awk "BEGIN {printf \"%.2f\", $TOTAL_SIZE/1024/1024/1024}") GB"
+  elif [[ $TOTAL_SIZE -ge 1048576 ]]; then
+    TOTAL_SIZE="$(awk "BEGIN {printf \"%.2f\", $TOTAL_SIZE/1024/1024}") MB"
+  elif [[ $TOTAL_SIZE -ge 1024 ]]; then
+    TOTAL_SIZE="$(awk "BEGIN {printf \"%.2f\", $TOTAL_SIZE/1024}") KB"
+  else
+    TOTAL_SIZE="$TOTAL_SIZE bytes"
+  fi
+
+  HEIGHT="15"
+  WIDTH="48"
+  CHOICE_HEIGHT="8"
+  MENU="SRCDS Logs - Lines: ${TOTAL_LINES:-0} Size: ${TOTAL_SIZE:-0}"
+
+  OPTIONS=(
+    1 "Server           View SRCDS log"
+    2 "Stats            View HLstatsX log"
+    3 "Addons           View SourceMod logs"
+    4 "Steam            View Steam logs"
+    5 "Debug            View debug.log"
+    6 "Screen           View screenlog.0"
+    7 "Cron             View cron.log"
+    0 "Purge            Delete all logs"
+  )
+
+  CHOICE=$(dialog --clear \
+    --menu "$MENU" \
+    $HEIGHT $WIDTH $CHOICE_HEIGHT \
+    "${OPTIONS[@]}" \
+    2>&1 >/dev/tty)
+
+  clear
+  case $CHOICE in
+
+  "1")
+
+    SERVER_LOG=$(ls -t "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log 2>/dev/null | head -n 1)
+    if [ -z "$SERVER_LOG" ]; then
+      dialog --msgbox "No log files found" 5 24
+    else
+      dialog --tailbox "$SERVER_LOG" 30 141
+    fi
+    srcds_logs # go back to logs menu
+    ;;
+
+  "2")
+
+    HLSTATSX_LOG=$(ls -t "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | head -n 1)
+    if [ -z "$HLSTATSX_LOG" ]; then
+      dialog --msgbox "No log files found" 5 24
+    else
+      dialog --tailbox "$HLSTATSX_LOG" 30 121
+    fi
+    srcds_logs # go back to logs menu
+    ;;
+
+  "3")
+
+    SOURCEMOD_LOG=$(ls -t "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/L*.log 2>/dev/null | head -n 1)
+    SOURCEMOD_ERROR_LOG=$(ls -t "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/errors*.log 2>/dev/null | head -n 1)
+    if [ -z "$SOURCEMOD_LOG" ]; then
+      dialog --msgbox "No log files found" 5 24
+    else
+      dialog --tailbox "$SOURCEMOD_LOG" 30 121
+      dialog --tailbox "$SOURCEMOD_ERROR_LOG" 30 121
+    fi
+    srcds_logs # go back to logs menu
+    ;;
+
+  "4")
+
+    LOG_DIR="$HOME/Steam/logs"
+
+    mapfile -t FILES < <(
+      find "$LOG_DIR" -maxdepth 1 -type f \( -name "*.txt" -o -name "*log*" \)
+    )
+
+    if [ ${#FILES[@]} -eq 0 ]; then
+      dialog --msgbox "No log files found" 5 24
+      exit 1
+    fi
+
+    MENU_ITEMS=()
+    for f in "${FILES[@]}"; do
+      MENU_ITEMS+=("$f" "")
+    done
+
+    WIDTH="$(echo "$(echo "$MENU_ITEMS" | wc -L)+20" | bc 2>/dev/null)"
+    CHOICE=$(dialog --stdout \
+      --title "Steam log files" \
+      --menu "Select a file:" 0 "$WIDTH" 17 \
+      "${MENU_ITEMS[@]}")
+
+    [ -z "$CHOICE" ] && return 1
+    nano "$CHOICE"
+    srcds_logs # go back to logs menu
+    ;;
+
+  "5")
+
+    DEBUG_LOGS=$(ls -t "$SRCDS_DIR"/debug.log 2>/dev/null | head -n 1)
+    if [ -z "$DEBUG_LOGS" ]; then
+      dialog --msgbox "No log files found" 5 24
+    else
+      dialog --tailbox "$DEBUG_LOGS" 30 121
+    fi
+    srcds_logs # go back to configs menu
+    ;;
+
+  "6")
+
+    SCREEN_LOGS=$(ls -t "$HOME"/bin/include/screenlog.0 2>/dev/null | head -n 1)
+    if [ -z "$SCREEN_LOGS" ]; then
+      dialog --msgbox "No log files found" 5 24
+    else
+      dialog --tailbox "$SCREEN_LOGS" 30 121
+    fi
+    srcds_logs # go back to configs menu
+    ;;
+
+  "7")
+
+    CRON_LOGS=$(ls -t "$HOME"/bin/include/cron.log 2>/dev/null | head -n 1)
+    WIDTH="$(echo "$(echo "$CRON_LOGS" | wc -L)+11" | bc 2>/dev/null)"
+    LENGTH="7"
+    if [ -z "$CRON_LOGS" ]; then
+      dialog --msgbox "No log files found" 5 24
+    else
+      dialog --tailbox "$CRON_LOGS" "$LENGTH" "$WIDTH"
+    fi
+    srcds_logs # go back to configs menu
+    ;;
+
+    # delete all logs
+
+  "0")
+
+    if screen -list 2>/dev/null | grep -q "[.]srcds_screen"; then
+      dialog --msgbox "Server already running!" 5 28
+      return 1
+    fi
+    rm "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* &>/dev/null
+    ;;
+  esac
+}
+
+################################################################################
+# srcds update
+################################################################################
+
+function srcds_update() {
+
+  # if missing, empty
+  if [[ ! -f "$HOME/bin/DIR" || -z $(grep -v '^[[:space:]]*$' "$HOME/bin/DIR") ]]; then
+    echo "File missing or empty/blank.."
+    sleep 1
+    echo "Finding SRCDS repo.."
+    INSTALL_DIR="$(find / -name "SRCDS" 2>/dev/null)"
+    echo "Creating new file.."
+  else
+    INSTALL_DIR="$(cat "$HOME"/bin/DIR 2>/dev/null)"
+  fi
+
+  echo "Update SRCDS"
+  cd "$INSTALL_DIR" && git pull https://github.com/Daedalus-code/SRCDS.git
+  sleep 1
+  cp -r "$HOME"/SRCDS/* "$HOME"/bin
+
+  # executable
+  chmod +x "$HOME"/bin/srcds_menu
+  chmod +x "$HOME"/bin/include/start_srcds
+
+  # update version file
+  LOC_V=$(wc -l <"$HOME"/bin/srcds_menu)
+  echo "v$LOC_V" >"$HOME/bin/version"
+
+  # dialog output
+  dialog --msgbox "srcds_menu file updated successfully." 5 41
+
+  # ensure ~/bin, include exists
+  mkdir -p "$HOME/bin"
+  mkdir -p "$HOME/bin/include"
+  echo "$INSTALL_DIR" >"$HOME"/bin/DIR
+  cp -r "$HOME"/SRCDS/* "$HOME"/bin
+  chmod +x "$HOME"/bin/srcds_menu
+  clear
+  echo "$(date | xargs)" >"$HOME"/bin/updated
+  cd && clear && exit
+}
+
+################################################################################
+# srcds system
+################################################################################
+
+srcds_system() {
+  dialog --no-collapse --msgbox "$(
+
+    # thermals
+    BATTERY_TEMP_RAW=$(</sys/class/thermal/thermal_zone0/temp)
+    CPU_TEMP_RAW=$(</sys/class/thermal/thermal_zone1/temp)
+
+    BATTERY_TEMP=$((BATTERY_TEMP_RAW / 1000))
+    CPU_TEMP=$((CPU_TEMP_RAW / 1000))
+
+    BATTERY_TYPE=$(</sys/class/thermal/thermal_zone0/type)
+    CPU_TYPE=$(</sys/class/thermal/thermal_zone1/type)
+
+    # system
+    srcds_system_ram
+    USERS=$(who | wc -l)
+    HOST=$(hostname)
+    UPTIME=$(uptime -p)
+    LOAD=$(cut -d' ' -f1-3 /proc/loadavg)
+    IP=$(hostname -I | awk '{print $1}')
+    CPU_MODEL=$(awk -F: '/model name/ {print $2; exit}' /proc/cpuinfo | xargs)
+
+    printf "%-16s %s\n" "Users........:" "$USERS ($(users))"
+    printf "%-16s %s\n" "Hostname.....:" "$HOST"
+    printf "%-16s %s\n" "Uptime.......:" "$UPTIME"
+    printf "%-16s %s\n" "Load Avg.....:" "$LOAD"
+    printf "%-16s %s\n\n" "IP Address...:" "$IP"
+
+    printf "%-16s %s\n" "CPU Model....:" "$CPU_MODEL"
+    printf "%-16s %s°C (%s)\n" "CPU Temp.....:" "$CPU_TEMP" "$CPU_TYPE"
+    printf "%-16s %s°C (%s)\n\n" "Battery Temp.:" "$BATTERY_TEMP" "$BATTERY_TYPE"
+
+    printf "%-16s %.1f GB / %.1f GB (%s%%)\n\n" \
+      "Memory Used..:" "$MEM_USED" "$MEM_TOTAL" "$MEM_PCT"
+
+    echo "Disk Usage...:"
+    printf "  %-12s %6s %6s %6s\n" "Mount" "Used" "Total" "Use%"
+    printf "  %-12s %6s %6s %6s\n" "-----" "----" "-----" "----"
+
+    df -BGB | awk 'NR>1 && $1 !~ /tmpfs|udev/ {
+        printf "  %-12s %6s %6s %6s\n", $6, $3, $2, $5
+      }'
+  )" 0 0
+}
+
+################################################################################
+# srcds menu
+################################################################################
+
+# load, srcds, screen pid
+SYSTEM_LOAD="$(awk '{ print $1,$2,$3 }' /proc/loadavg)"
+
+# get number of CPU cores
+CPU_CORES=$(nproc)
+
+# memory
+function srcds_system_ram() {
+  # read memory info
+  MEM_TOTAL=$(grep -i MemTotal /proc/meminfo | awk '{print $2}')         # in KB
+  MEM_FREE=$(grep -i MemFree /proc/meminfo | awk '{print $2}')           # in KB
+  MEM_AVAILABLE=$(grep -i MemAvailable /proc/meminfo | awk '{print $2}') # in KB
+  # calculate used memory (realistic: total - available)
+  MEM_USED=$((MEM_TOTAL - MEM_AVAILABLE))
+  # optional: convert to MB for readability
+  MEM_TOTAL=$((MEM_TOTAL / 1024))
+  MEM_USED=$((MEM_USED / 1024))
+  MEM_FREE_MB=$((MEM_AVAILABLE / 1024))
+  # calculate percentage used
+  MEM_PCT=$((MEM_USED * 100 / MEM_TOTAL))
+}
+
+# read individual load numbers into variables
+read LOAD1 LOAD2 LOAD3 <<<"$SYSTEM_LOAD"
+
+# calculate average load
+AVG_LOAD=$(awk -v l1="$LOAD1" -v l2="$LOAD2" -v l3="$LOAD3" 'BEGIN { print (l1+l2+l3)/3 }')
+
+# convert to percentage
+LOAD_PCT=$(awk -v avg="$AVG_LOAD" -v cores="$CPU_CORES" 'BEGIN { printf "%.2f", (avg/cores)*100 }')
+SRCDS_PID="$(pidof srcds_linux 2>/dev/null)"
+SCREEN_PID="$(screen -li 2>/dev/null | grep "srcds_screen" 2>/dev/null | awk -F. '{ print $1 }' | awk '{ print $1 }')"
+
+# screenlog.0
+ACTIVE_STATUS="$(grep -A7 "hostname" "$HOME"/bin/include/screenlog.0 2>/dev/null | tail -8 | tr -d ')\r')"
+ACTIVE_HOSTNAME="$(grep "hostname" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg | awk -F'"' '{ print $2 }')"
+
+# if zero
+if [[ -z "$ACTIVE_HOSTNAME" ]]; then
+  ACTIVE_HOSTNAME="No server name!"
+fi
+
+ACTIVE_AMOUNT="$(echo "$ACTIVE_STATUS" | grep "players" | egrep -o "[0-9]+" | head -2 | awk '{sum += $1} END {print sum}' 2>/dev/null)"
+ACTIVE_IRL_AMOUNT="$(echo "$ACTIVE_STATUS" | grep "players" | awk '{ print $3 }' | tr -d '(')"
+ACTIVE_BOT_AMOUNT="$(echo "$ACTIVE_STATUS" | grep "players" | awk '{ print $5 }' | tr -d '(')"
+ACTIVE_MAX_AMOUNT="$(echo "$ACTIVE_STATUS" | grep "players" | awk '{ print $7 }' | tr -d '(')"
+ACTIVE_MAP="$(echo "$ACTIVE_STATUS" | grep "map" | awk '{ print $3 }')"
+ACTIVE_WAN="$(echo "$ACTIVE_STATUS" | grep 'udp/ip' | awk '{print $NF}')"
+
+function update_active() {
+  # if greater than n
+  if [[ "$ACTIVE_AMOUNT" -gt "0" ]]; then
+    # update active players
+    grep -A"$ACTIVE_AMOUNT" "userid" "$HOME"/bin/include/screenlog.0 2>/dev/null | tail -"$ACTIVE_AMOUNT" | tr -d '#' >/tmp/usrid.tmp
+  fi
+}
+update_active
+
+################################################################################
+
+function srcds_active() {
+
+  if ! screen -list 2>/dev/null | grep -q "[.]srcds_screen"; then
+    dialog --msgbox "Server not running!" 5 24
+    return 1
+  fi
+
+  update_active
+
+  TMPFILE="/tmp/usrid.tmp"
+
+  # fetch mysql credentials from hlstats.conf
+  DB_HOST="$(grep DBHost "$HLSTATSX_DIR"/hlstats.conf | grep -v "#" | awk '{print $NF}' | tr -d '"' | awk -F: '{print $1}')"
+  DB_USER="$(grep DBUsername "$HLSTATSX_DIR"/hlstats.conf | grep -v "#" | awk '{print $NF}' | tr -d '"')"
+  DB_PASS="$(grep DBPassword "$HLSTATSX_DIR"/hlstats.conf | grep -v "#" | awk '{print $NF}' | tr -d '"')"
+  DB_NAME="$(grep DBName "$HLSTATSX_DIR"/hlstats.conf | grep -v "#" | awk '{print $NF}' | tr -d '"')"
+
+  [[ ! -f "$TMPFILE" ]] && {
+    dialog --msgbox "Player file not found:\n$TMPFILE" 8 50
+    return 1
+  }
+
+  MENU_ITEMS=()
+  COUNTER=1
+
+  while read -r LINE; do
+    [[ "$LINE" =~ userid ]] && continue # skip header
+    [[ -z "$LINE" ]] && continue        # skip empty lines
+    [[ "$LINE" =~ ^# ]] && continue     # skip commented lines
+
+    # use counter as menu number, full line as menu text
+    MENU_ITEMS+=("$COUNTER" "$LINE")
+    ((COUNTER++))
+  done <"$TMPFILE"
+
+  ITEM_COUNT=$((${#MENU_ITEMS[@]} / 2))
+  [[ "$ITEM_COUNT" -eq 0 ]] && {
+    dialog --msgbox "No players found." 5 24
+    return 1
+  }
+
+  HEIGHT=$((ITEM_COUNT + 7))
+  WIDTH="$(echo "$(echo "${MENU_ITEMS[@]}" | wc -L)+11" | bc 2>/dev/null)"
+  MENU_HEIGHT="$ITEM_COUNT"
+  ((MENU_HEIGHT > 15)) && MENU_HEIGHT="15"
+
+  SELECTED=$(dialog --title "Connected Players" \
+    --menu "Select a player" \
+    "$HEIGHT" "$WIDTH" "$MENU_HEIGHT" \
+    "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3)
+
+  [[ -z "$SELECTED" ]] && return 1
+
+  # get selected line text
+  PLAYER_ROW=""
+  for ((i = 0; i < ${#MENU_ITEMS[@]}; i += 2)); do
+    [[ "${MENU_ITEMS[i]}" == "$SELECTED" ]] && PLAYER_ROW="${MENU_ITEMS[i + 1]}"
+  done
+
+  # extract player name (first quoted string)
+  PLAYER_NAME=$(awk -F'"' '{print $2}' <<<"$PLAYER_ROW")
+
+  RESULT=$(
+    mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" \
+      --batch --raw --silent \
+      --execute "
+  SELECT CONCAT_WS('|',
+    p.lastName,
+    p.skill,
+    p.kills,
+    p.deaths,
+    ROUND(p.connection_time / 60),
+    IFNULL(p.lastAddress,''),
+    IFNULL(p.country,''),
+    IFNULL(p.flag,''),
+    IFNULL(p.activity,''),
+    ROUND(p.kills / IF(p.deaths = 0, 1, p.deaths), 2),
+    (SELECT COUNT(*) + 1 FROM hlstats_Players WHERE skill > p.skill AND hideranking=0)
+  )
+  FROM hlstats_Players p
+  WHERE p.lastName = REPLACE('$PLAYER_NAME','|','')
+  LIMIT 1;
+  " 2>/dev/null
+  )
+
+  # HARD guarantee correct mapping
+  IFS='|' read -r \
+    NAME SKILL KILLS DEATHS CONNECTION ADDRESS COUNTRY FLAG ACTIVITY KPD RANK \
+    <<<"$RESULT"
+
+  if [[ -z "$COUNTRY" ]]; then
+    COUNTRY="none"
+  fi
+
+  if [[ "$ADDRESS" == "127.0.0.1" ]]; then
+    ADDRESS="Bot"
+  fi
+
+  if [ -z "$RESULT" ]; then
+    dialog --msgbox "No HLstatsX data found for:\n$PLAYER_NAME" 0 0
+    return 1
+  fi
+
+  LINES=(
+    "                  "
+    "  Player...: $NAME"
+    "  Rank.....: $RANK"
+    "  Skill....: $SKILL"
+    "  Kills....: $KILLS"
+    "  Deaths...: $DEATHS"
+    "  K/D......: $KPD"
+    "  Time.....: $CONNECTION min"
+    "  Address..: $ADDRESS"
+    "  Country..: $COUNTRY ($FLAG)"
+    "  Activity.: $ACTIVITY %"
+  )
+
+  MAX_WIDTH=0
+  for LINE in "${LINES[@]}"; do
+    len=${#LINE}
+    ((len > MAX_WIDTH)) && MAX_WIDTH=$len
+  done
+
+  WIDTH=$((MAX_WIDTH + 7))     # add a little padding
+  HEIGHT=$((${#LINES[@]} + 5)) # 2 extra lines for top/bottom
+
+  MSG=""
+  for LINE in "${LINES[@]}"; do
+    MSG+="$LINE\n"
+  done
+
+  dialog --title "  Player info" --no-collapse --msgbox "$MSG" "$HEIGHT" "$WIDTH"
+  srcds_active
+}
+
+################################################################################
+
+# if zero
+if [[ -z "$ACTIVE_PLAYERS" ]]; then
+  ACTIVE_PLAYERS="None"
+fi
+if [[ -z "$ACTIVE_MAP" ]]; then
+  ACTIVE_MAP="None"
+fi
+if [[ -z "$ACTIVE_WAN" ]]; then
+  ACTIVE_WAN="Offline"
+fi
+
+SCREEN_LOG="$HLSTATSX_DIR/screenlog.0"
+SCREEN_SESSION="srcds_screen"
+SCREEN_MAXLINES="7000"
+
+# trim screen log
+if [ -f "$SCREEN_LOG" ] && [ "$(wc -l <"$SCREEN_LOG")" -ge "$SCREEN_MAXLINES" ]; then
+  screen -S "$SCREEN_SESSION" -X log off
+  echo "$(tail -369 "$SCREEN_LOG")" >"$SCREEN_LOG"
+  screen -S "$SCREEN_SESSION" -X log on
+fi
+
+# srcds, screen, hlstatsx status
+if [[ "$SRCDS_PID" > "0" ]]; then
+  SRCDS_STATUS="OK"
+else
+  SRCDS_STATUS="NO"
+fi
+if [[ "$SCREEN_PID" > "0" ]]; then
+  SCREEN_STATUS="OK"
+else
+  SCREEN_STATUS="NO"
+fi
+
+# memory function
+srcds_system_ram
+
+HEIGHT="20"
+CHOICE_HEIGHT="10"
+BACKTITLE="SRCDS Menu $SCRIPT_VERSION"
+MENU="$ACTIVE_HOSTNAME
+$ACTIVE_MAP | ${ACTIVE_IRL_AMOUNT:-0}/${ACTIVE_BOT_AMOUNT:-0}/${ACTIVE_MAX_AMOUNT:-0} | ${ACTIVE_WAN:?}:$SERVER_PORT
+CPU ${LOAD_PCT} % | RAM ${MEM_PCT} % | screen $SCREEN_STATUS srcds $SRCDS_STATUS"
+WIDTH="$(($(echo "$MENU" | wc -L) + 8))"
+
+# if zero
+if [[ "$WIDTH" -lt "40" ]]; then
+  WIDTH="50"
+fi
+
+OPTIONS=(
+  1 "Console      Show SRCDS screen console"
+  2 "Active       Active players"
+  3 "Start        Launch source server"
+  4 "Stop         Stop source server"
+  5 "Logs         View server logs"
+  6 "Config       Edit server configurations"
+  7 "Mods         MetaMod SourceMod HLstatsX"
+  8 "Tools        Server tools & options"
+  9 "Update       Pull updates from github"
+  i "System       System information"
+  0 "Exit         Quit program"
+)
+
+CHOICE=$(dialog --clear \
+  --backtitle "$BACKTITLE" \
+  --no-cancel \
+  --menu "$MENU" \
+  $HEIGHT $WIDTH $CHOICE_HEIGHT \
+  "${OPTIONS[@]}" \
+  2>&1 >/dev/tty)
+
+clear
+case $CHOICE in
+"1") srcds_console ;;
+"2") srcds_active ;;
+"3") srcds_start ;;
+"4") srcds_stop ;;
+"5") srcds_logs ;;
+"6") srcds_configs ;;
+"7") srcds_mods ;;
+"8") srcds_options ;;
+"9") srcds_update ;;
+"i") srcds_system ;;
+"0") clear && exit 0 ;;
+esac
+
+# restart the script by exec
+exec /bin/bash "$0" "$@"
+clear
+
+# END
