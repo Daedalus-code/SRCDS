@@ -31,7 +31,7 @@ source "$HOME/bin/include/srcds.conf"
 # generate bots
 ################################################################################
 
-function generate_bots() {
+function srcds_bots() {
 
   BOT_DIFFICULTY=$(grep -E "^bot_difficulty" "$SRCDS_DIR/$SERVER_GAME/cfg/server.cfg" | awk '{print $2}')
   BOT_DIFFICULTY=${BOT_DIFFICULTY:-2}

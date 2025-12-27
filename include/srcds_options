@@ -93,7 +93,7 @@ function srcds_options() {
 
       "1")
 
-        generate_bots
+        srcds_bots
         ;;
 
       "2")

@@ -30,22 +30,21 @@ exec </dev/tty >/dev/tty 2>&1
 ################################################################################
 
 source "$HOME/bin/include/srcds.conf"
-source "$HOME/bin/include/generate_bots"
+source "$HOME/bin/include/srcds_bots"
 source "$HOME/bin/include/data_usage"
 source "$HOME/bin/include/srcds_options"
 source "$HOME/bin/include/srcds_mods"
 
 ################################################################################
-# install
+# srcds version
 ################################################################################
 
 # update version file
-LOC_V=$(wc -l <"$HOME"/bin/srcds_menu)
-echo "v$LOC_V" >"$HOME/bin/version"
+LOC_BIN=$(wc -l <"$HOME"/bin/*)
+LOC_INCLUDE=$(wc -l <"$HOME"/bin/include/*_*)
+LOC_V="$(echo "$LOC_BIN+$LOC_INCLUDE" | bc 2>/dev/null)"
 
-################################################################################
-# srcds version
-################################################################################
+echo "v$LOC_V" >"$HOME/bin/version"
 
 SCAN_FILE="$HOME/bin/srcds_menu"
 VERSION_FILE="$HOME/bin/version"
@@ -691,11 +690,11 @@ BACKTITLE="SRCDS Menu $SCRIPT_VERSION"
 MENU="$ACTIVE_HOSTNAME
 $ACTIVE_MAP | ${ACTIVE_IRL_AMOUNT:-0}/${ACTIVE_BOT_AMOUNT:-0}/${ACTIVE_MAX_AMOUNT:-0} | ${ACTIVE_WAN:?}:$SERVER_PORT
 CPU ${LOAD_PCT} % | RAM ${MEM_PCT} % | screen $SCREEN_STATUS srcds $SRCDS_STATUS"
-WIDTH="$(($(echo "$MENU" | wc -L) + 8))"
+WIDTH="$(($(echo "$MENU" | wc -L) + 7))"
 
 # if zero
-if [[ "$WIDTH" -lt "40" ]]; then
-  WIDTH="50"
+if [[ "$WIDTH" -lt "51" ]]; then
+  WIDTH="51"
 fi
 
 OPTIONS=(
