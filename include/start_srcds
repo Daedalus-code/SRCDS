@@ -1,0 +1,42 @@
+#!/bin/bash
+
+################################################################################
+#
+# SRCDS Tools & Options
+# Author: Daedalus-code
+#
+# License: GNU General Public License v3.0
+# Description: A menu-driven shell script for managing SRCDS servers, bots,
+#              data usage, crontab tasks, disk usage, map compression, and
+#              password generation.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this script. If not, see <https://www.gnu.org/licenses/>.
+#
+################################################################################
+
+source "$HOME/bin/include/srcds.conf"
+
+# if not running
+if ! screen -list 2>/dev/null | grep -q "[.]srcds_screen"; then
+  # start server with -debug, screenlog.0
+  screen -L -S srcds_screen -dm "$SRCDS_DIR"/srcds_run -debug \
+    -usercon -console -game "$SERVER_GAME" \
+    -port "$SERVER_PORT" +map "$SERVER_MAP" +maxplayers "$SERVER_MAX" +ip "$SERVER_IP"
+else
+  echo "Server is already running on port $SERVER_PORT"
+  # tail log
+  echo "$(tail -21 "$HOME"/bin/include/cron.log 2>/dev/null | egrep -v "/|:|-")" >"$HOME"/bin/include/cron.log
+fi
+
+# END
