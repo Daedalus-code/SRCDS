@@ -6,9 +6,6 @@
 # Author: Daedalus-code
 #
 # License: GNU General Public License v3.0
-# Description: A menu-driven shell script for managing SRCDS servers, bots,
-#              data usage, crontab tasks, disk usage, map compression, and
-#              password generation.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
