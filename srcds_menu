@@ -334,7 +334,7 @@ function srcds_logs() {
       dialog --msgbox "Server already running!" 5 28
       return 1
     fi
-    rm "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* &>/dev/null
+    rm "$HOME"/bin/include/cron*.log "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* &>/dev/null
     ;;
   esac
 }
