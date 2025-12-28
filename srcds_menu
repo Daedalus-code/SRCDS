@@ -321,7 +321,7 @@ function srcds_logs() {
     WIDTH="$(echo "$(echo "$CRON_LOGS" | wc -L)+11" | bc 2>/dev/null)"
     LENGTH="15"
     if [ -z "$CRON_LOGS" ]; then
-      dialog --msgbox "No log files found" 15 24
+      dialog --msgbox "No log files found" 5 24
     else
       dialog --msgbox "$CRON_LOGS" "$LENGTH" "$WIDTH"
     fi
