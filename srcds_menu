@@ -198,6 +198,10 @@ function srcds_logs() {
   elif [[ $TOTAL_SIZE -ge 1024 ]]; then
     TOTAL_SIZE="$(awk "BEGIN {printf \"%.2f\", $TOTAL_SIZE/1024}") KB"
   else
+    # if zero
+    if [[ -z "$TOTAL_SIZE" ]]; then
+      TOTAL_SIZE="0"
+    fi
     TOTAL_SIZE="$TOTAL_SIZE bytes"
   fi
 
