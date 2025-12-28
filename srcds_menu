@@ -40,9 +40,7 @@ source "$HOME/bin/include/system_info"
 # not found
 if [[ ! -f "$HOME/bin/version" ]]; then
   # update version file
-  LOC_BIN=$(wc -l "$HOME"/bin/* 2>/dev/null | grep "total" | awk '{ print $1 }')
-  LOC_INCLUDE=$(wc -l "$HOME"/bin/include/*_* 2>/dev/null | grep "total" | awk '{ print $1 }')
-  LOC_V="$(echo "$LOC_BIN+$LOC_INCLUDE" | bc 2>/dev/null)"
+  LOC_V=$(wc -l $HOME/bin/*_* "$HOME"/bin/include/*_* 2>/dev/null | grep "total" | awk '{ print $1 }')
   echo "v$LOC_V" >"$HOME/bin/version"
 fi
 
