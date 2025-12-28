@@ -564,6 +564,7 @@ function srcds_active() {
   LINES=(
     "                  "
     "  Player.......: $NAME"
+    "  Activity.....: $ACTIVITY %"
     "  Rank.........: $RANK"
     "  Skill........: $SKILL"
     "  Skill_Change.: $SKILL_CHANGE"
@@ -575,7 +576,6 @@ function srcds_active() {
     "  Time.........: $CONNECTION min"
     "  Address......: $ADDRESS"
     "  Country......: $COUNTRY ($FLAG)"
-    "  Activity.....: $ACTIVITY %"
   )
 
   MAX_WIDTH=0
