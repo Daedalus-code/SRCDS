@@ -566,7 +566,7 @@ function srcds_active() {
     "  Player.......: $NAME"
     "  Rank.........: $RANK"
     "  Skill........: $SKILL"
-    "  Change.......: $SKILL_CHANGE"
+    "  Skill_Change.: $SKILL_CHANGE"
     "  Kills........: $KILLS"
     "  Kill_Streak..: $KILL_STREAK"
     "  Deaths.......: $DEATHS"
