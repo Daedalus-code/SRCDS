@@ -329,25 +329,33 @@ srcds_mods() {
 
   ##############################################################################
 
+  # pid of hlstats.pl
   HLSTATSX_PID=$(pgrep hlstats.pl)
-
+  # if any data
   if [[ -n "$HLSTATSX_PID" ]]; then
     ELAPSED=$(ps -p "$HLSTATSX_PID" -o etime= | tr -d ' ')
-    # parse elapsed time
-    if [[ "$ELAPSED" =~ ([0-9]+)-([0-9]+):([0-9]+):([0-9]+) ]]; then
+
+    if [[ "$ELAPSED" =~ ^([0-9]+)-([0-9]+):([0-9]+):([0-9]+)$ ]]; then
+      # DD-HH:MM:SS
       ((HOURS = ${BASH_REMATCH[1]} * 24 + ${BASH_REMATCH[2]}))
       MINUTES=${BASH_REMATCH[3]}
       SECONDS=${BASH_REMATCH[4]}
-    elif [[ "$ELAPSED" =~ ([0-9]+):([0-9]+):([0-9]+) ]]; then
+    elif [[ "$ELAPSED" =~ ^([0-9]+):([0-9]+):([0-9]+)$ ]]; then
+      # HH:MM:SS
       HOURS=${BASH_REMATCH[1]}
       MINUTES=${BASH_REMATCH[2]}
       SECONDS=${BASH_REMATCH[3]}
+    elif [[ "$ELAPSED" =~ ^([0-9]+):([0-9]+)$ ]]; then
+      # MM:SS
+      HOURS=0
+      MINUTES=${BASH_REMATCH[1]}
+      SECONDS=${BASH_REMATCH[2]}
     else
-      HOURS="0"
-      MINUTES="0"
-      SECONDS="0"
+      HOURS=0
+      MINUTES=0
+      SECONDS=0
     fi
-    HLSTATX_STATUS="$(printf "%02dh:%02dm:%02ds" "$HOURS" "$MINUTES" "$SECONDS")"
+    HLSTATX_STATUS=$(printf "%02dh:%02dm:%02ds" "$HOURS" "$MINUTES" "$SECONDS")
   else
     HLSTATX_STATUS="Offline"
   fi
