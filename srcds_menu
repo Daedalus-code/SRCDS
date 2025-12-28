@@ -31,7 +31,7 @@ source "$HOME/bin/include/srcds_bots"
 source "$HOME/bin/include/data_usage"
 source "$HOME/bin/include/srcds_mods"
 source "$HOME/bin/include/srcds_options"
-source "$HOME/bin/include/system"
+source "$HOME/bin/include/system_info"
 
 ################################################################################
 # srcds version
