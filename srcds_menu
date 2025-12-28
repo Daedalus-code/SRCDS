@@ -561,6 +561,11 @@ function srcds_active() {
     return 1
   fi
 
+  # if positive
+  if [[ "$(echo "$SKILL_CHANGE" | grep -c "-")" -eq "0" ]]; then
+    SKILL_CHANGE="+$SKILL_CHANGE"
+  fi
+
   LINES=(
     "                  "
     "  Player.......: $NAME"
