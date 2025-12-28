@@ -531,6 +531,9 @@ function srcds_active() {
     IFNULL(p.country,''),
     IFNULL(p.flag,''),
     IFNULL(p.activity,''),
+    IFNULL(p.last_skill_change,''),
+    IFNULL(p.kill_streak,''),
+    IFNULL(p.death_streak,''),
     ROUND(p.kills / IF(p.deaths = 0, 1, p.deaths), 2),
     (SELECT COUNT(*) + 1 FROM hlstats_Players WHERE skill > p.skill AND hideranking=0)
   )
@@ -542,7 +545,7 @@ function srcds_active() {
 
   # HARD guarantee correct mapping
   IFS='|' read -r \
-    NAME SKILL KILLS DEATHS CONNECTION ADDRESS COUNTRY FLAG ACTIVITY KPD RANK \
+    NAME SKILL KILLS DEATHS CONNECTION ADDRESS COUNTRY FLAG ACTIVITY SKILL_CHANGE KILL_STREAK DEATH_STREAK KPD RANK \
     <<<"$RESULT"
 
   if [[ -z "$COUNTRY" ]]; then
@@ -560,16 +563,19 @@ function srcds_active() {
 
   LINES=(
     "                  "
-    "  Player...: $NAME"
-    "  Rank.....: $RANK"
-    "  Skill....: $SKILL"
-    "  Kills....: $KILLS"
-    "  Deaths...: $DEATHS"
-    "  K/D......: $KPD"
-    "  Time.....: $CONNECTION min"
-    "  Address..: $ADDRESS"
-    "  Country..: $COUNTRY ($FLAG)"
-    "  Activity.: $ACTIVITY %"
+    "  Player.......: $NAME"
+    "  Rank.........: $RANK"
+    "  Skill........: $SKILL"
+    "  Change.......: $SKILL_CHANGE"
+    "  Kills........: $KILLS"
+    "  Kill_Streak..: $KILL_STREAK"
+    "  Deaths.......: $DEATHS"
+    "  Death_Streak.: $DEATH_STREAK"
+    "  K/D..........: $KPD"
+    "  Time.........: $CONNECTION min"
+    "  Address......: $ADDRESS"
+    "  Country......: $COUNTRY ($FLAG)"
+    "  Activity.....: $ACTIVITY %"
   )
 
   MAX_WIDTH=0
