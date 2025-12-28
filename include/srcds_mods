@@ -381,7 +381,7 @@ srcds_mods() {
   fi
 
   PLUGIN_INFO="Plugins
-└─ Status    : ${#ENABLED[@]} Enabled - ${#DISABLED[@]} Disabled"
+└─ Status....: ${#ENABLED[@]} Enabled - ${#DISABLED[@]} Disabled"
 
   ##############################################################################
 
