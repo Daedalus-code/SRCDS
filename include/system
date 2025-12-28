@@ -1,0 +1,80 @@
+#!/bin/bash
+
+################################################################################
+#
+# SRCDS Tools & Options
+# Author: Daedalus-code
+#
+# License: GNU General Public License v3.0
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this script. If not, see <https://www.gnu.org/licenses/>.
+#
+################################################################################
+
+################################################################################
+# system
+################################################################################
+
+# users, host, uptime, load, ip, cpu model
+USERS=$(who | wc -l)
+HOST=$(hostname)
+UPTIME=$(uptime -p)
+LOAD=$(cut -d' ' -f1-3 /proc/loadavg)
+IP=$(hostname -I | awk '{print $1}')
+CPU_MODEL=$(awk -F: '/model name/ {print $2; exit}' /proc/cpuinfo | xargs)
+
+# load, srcds, screen pid
+SYSTEM_LOAD="$(awk '{ print $1,$2,$3 }' /proc/loadavg)"
+# get number of CPU cores
+CPU_CORES=$(nproc)
+
+# read individual load numbers into variables
+read LOAD1 LOAD2 LOAD3 <<<"$SYSTEM_LOAD"
+
+# calculate average load
+AVG_LOAD=$(awk -v l1="$LOAD1" -v l2="$LOAD2" -v l3="$LOAD3" 'BEGIN { print (l1+l2+l3)/3 }')
+# convert to percentage
+LOAD_PCT=$(awk -v avg="$AVG_LOAD" -v cores="$CPU_CORES" 'BEGIN { printf "%.2f", (avg/cores)*100 }')
+
+################################################################################
+# thermals
+################################################################################
+
+BATTERY_TEMP_RAW=$(</sys/class/thermal/thermal_zone0/temp)
+CPU_TEMP_RAW=$(</sys/class/thermal/thermal_zone1/temp)
+
+BATTERY_TEMP=$((BATTERY_TEMP_RAW / 1000))
+CPU_TEMP=$((CPU_TEMP_RAW / 1000))
+
+BATTERY_TYPE=$(</sys/class/thermal/thermal_zone0/type)
+CPU_TYPE=$(</sys/class/thermal/thermal_zone1/type)
+
+################################################################################
+# memory
+################################################################################
+
+# read memory info
+MEM_TOTAL=$(grep -i MemTotal /proc/meminfo | awk '{print $2}')         # in KB
+MEM_FREE=$(grep -i MemFree /proc/meminfo | awk '{print $2}')           # in KB
+MEM_AVAILABLE=$(grep -i MemAvailable /proc/meminfo | awk '{print $2}') # in KB
+# calculate used memory (realistic: total - available)
+MEM_USED=$((MEM_TOTAL - MEM_AVAILABLE))
+# optional: convert to MB for readability
+MEM_TOTAL=$((MEM_TOTAL / 1024))
+MEM_USED=$((MEM_USED / 1024))
+MEM_FREE_MB=$((MEM_AVAILABLE / 1024))
+# calculate percentage used
+MEM_PCT=$((MEM_USED * 100 / MEM_TOTAL))
+
+# END

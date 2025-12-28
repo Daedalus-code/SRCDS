@@ -29,8 +29,9 @@ exec </dev/tty >/dev/tty 2>&1
 source "$HOME/bin/include/srcds.conf"
 source "$HOME/bin/include/srcds_bots"
 source "$HOME/bin/include/data_usage"
-source "$HOME/bin/include/srcds_options"
 source "$HOME/bin/include/srcds_mods"
+source "$HOME/bin/include/srcds_options"
+source "$HOME/bin/include/system"
 
 ################################################################################
 # srcds version
@@ -386,25 +387,6 @@ function srcds_update() {
 srcds_system() {
   dialog --no-collapse --msgbox "$(
 
-    # thermals
-    BATTERY_TEMP_RAW=$(</sys/class/thermal/thermal_zone0/temp)
-    CPU_TEMP_RAW=$(</sys/class/thermal/thermal_zone1/temp)
-
-    BATTERY_TEMP=$((BATTERY_TEMP_RAW / 1000))
-    CPU_TEMP=$((CPU_TEMP_RAW / 1000))
-
-    BATTERY_TYPE=$(</sys/class/thermal/thermal_zone0/type)
-    CPU_TYPE=$(</sys/class/thermal/thermal_zone1/type)
-
-    # system
-    srcds_system_ram
-    USERS=$(who | wc -l)
-    HOST=$(hostname)
-    UPTIME=$(uptime -p)
-    LOAD=$(cut -d' ' -f1-3 /proc/loadavg)
-    IP=$(hostname -I | awk '{print $1}')
-    CPU_MODEL=$(awk -F: '/model name/ {print $2; exit}' /proc/cpuinfo | xargs)
-
     printf "%-16s %s\n" "Users........:" "$USERS ($(users))"
     printf "%-16s %s\n" "Hostname.....:" "$HOST"
     printf "%-16s %s\n" "Uptime.......:" "$UPTIME"
@@ -432,36 +414,6 @@ srcds_system() {
 # srcds menu
 ################################################################################
 
-# load, srcds, screen pid
-SYSTEM_LOAD="$(awk '{ print $1,$2,$3 }' /proc/loadavg)"
-
-# get number of CPU cores
-CPU_CORES=$(nproc)
-
-# memory
-function srcds_system_ram() {
-  # read memory info
-  MEM_TOTAL=$(grep -i MemTotal /proc/meminfo | awk '{print $2}')         # in KB
-  MEM_FREE=$(grep -i MemFree /proc/meminfo | awk '{print $2}')           # in KB
-  MEM_AVAILABLE=$(grep -i MemAvailable /proc/meminfo | awk '{print $2}') # in KB
-  # calculate used memory (realistic: total - available)
-  MEM_USED=$((MEM_TOTAL - MEM_AVAILABLE))
-  # optional: convert to MB for readability
-  MEM_TOTAL=$((MEM_TOTAL / 1024))
-  MEM_USED=$((MEM_USED / 1024))
-  MEM_FREE_MB=$((MEM_AVAILABLE / 1024))
-  # calculate percentage used
-  MEM_PCT=$((MEM_USED * 100 / MEM_TOTAL))
-}
-
-# read individual load numbers into variables
-read LOAD1 LOAD2 LOAD3 <<<"$SYSTEM_LOAD"
-
-# calculate average load
-AVG_LOAD=$(awk -v l1="$LOAD1" -v l2="$LOAD2" -v l3="$LOAD3" 'BEGIN { print (l1+l2+l3)/3 }')
-
-# convert to percentage
-LOAD_PCT=$(awk -v avg="$AVG_LOAD" -v cores="$CPU_CORES" 'BEGIN { printf "%.2f", (avg/cores)*100 }')
 SRCDS_PID="$(pidof srcds_linux 2>/dev/null)"
 SCREEN_PID="$(screen -li 2>/dev/null | grep "srcds_screen" 2>/dev/null | awk -F. '{ print $1 }' | awk '{ print $1 }')"
 
@@ -677,13 +629,17 @@ fi
 # memory function
 srcds_system_ram
 
-HEIGHT="20"
+HEIGHT="24"
 CHOICE_HEIGHT="10"
 BACKTITLE="SRCDS Menu $SCRIPT_VERSION"
-MENU="$ACTIVE_HOSTNAME
-$ACTIVE_MAP | ${ACTIVE_IRL_AMOUNT:-0}/${ACTIVE_BOT_AMOUNT:-0}/${ACTIVE_MAX_AMOUNT:-0} | ${ACTIVE_WAN:?}:$SERVER_PORT
-CPU ${LOAD_PCT} % | RAM ${MEM_PCT} % | screen $SCREEN_STATUS srcds $SRCDS_STATUS"
-WIDTH="$(($(echo "$MENU" | wc -L) + 7))"
+MENU="Host.....: $ACTIVE_HOSTNAME
+Address..: ${ACTIVE_WAN:?}:$SERVER_PORT
+Map......: $ACTIVE_MAP
+Players..: ${ACTIVE_IRL_AMOUNT:-0}/${ACTIVE_BOT_AMOUNT:-0}/${ACTIVE_MAX_AMOUNT:-0}
+CPU......: ${LOAD_PCT} %
+RAM......: ${MEM_PCT} %
+Services.: screen $SCREEN_STATUS srcds $SRCDS_STATUS"
+WIDTH="$(($(echo "$MENU" | wc -L) + 6))"
 
 # if zero
 if [[ "$WIDTH" -lt "51" ]]; then
