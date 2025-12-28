@@ -188,8 +188,8 @@ function srcds_configs() {
 function srcds_logs() {
 
   # total log lines
-  TOTAL_LINES="$(wc -l "$HOME"/bin/include/cron.log "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | tail -1 | awk '{ print $1 }')"
-  TOTAL_SIZE=$(stat -c%s "$HOME"/bin/include/cron.log "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | awk '{sum += $1} END {print sum}')
+  TOTAL_LINES="$(wc -l "$HOME"/bin/include/cron*.log "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | tail -1 | awk '{ print $1 }')"
+  TOTAL_SIZE=$(stat -c%s "$HOME"/bin/include/cron*.log "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | awk '{sum += $1} END {print sum}')
 
   if [[ $TOTAL_SIZE -ge 1073741824 ]]; then
     TOTAL_SIZE="$(awk "BEGIN {printf \"%.2f\", $TOTAL_SIZE/1024/1024/1024}") GB"
@@ -315,13 +315,13 @@ function srcds_logs() {
 
   "7")
 
-    CRON_LOGS=$(ls -t "$HOME"/bin/include/cron.log 2>/dev/null | head -n 1)
+    CRON_LOGS="$(cat "$HOME"/bin/include/cron*.log 2>/dev/null | sort | uniq)"
     WIDTH="$(echo "$(echo "$CRON_LOGS" | wc -L)+11" | bc 2>/dev/null)"
-    LENGTH="7"
+    LENGTH="15"
     if [ -z "$CRON_LOGS" ]; then
-      dialog --msgbox "No log files found" 5 24
+      dialog --msgbox "No log files found" 15 24
     else
-      dialog --tailbox "$CRON_LOGS" "$LENGTH" "$WIDTH"
+      dialog --msgbox "$CRON_LOGS" "$LENGTH" "$WIDTH"
     fi
     srcds_logs # go back to configs menu
     ;;
