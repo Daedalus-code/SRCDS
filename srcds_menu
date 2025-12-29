@@ -617,11 +617,11 @@ fi
 HLSTATSX_PID_INFO="$(ps -p "$(pgrep hlstats.pl 2>/dev/null)" 2>/dev/null | column -t)"
 
 # if pid is running
-if [[ -n "$HLSTATSX_PID_INFO" ]]; then
+if [[ "$(echo "$HLSTATSX_PID_INFO" | grep -c "PID")" -gt "0" ]]; then
   HLSTATSX_STATUS="hlstatsx OK"
 fi
 # if no pid found but installed
-if [[ -z "$HLSTATSX_PID_INFO" && -d "$HOME"/HLstatsX ]]; then
+if [[ "$(echo "$HLSTATSX_PID_INFO" | grep -c "PID")" -eq "0" && -d "$HOME"/HLstatsX ]]; then
   HLSTATSX_STATUS="hlstatsx NO"
 else
   HLSTATSX_STATUS=""
