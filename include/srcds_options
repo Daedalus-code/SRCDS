@@ -193,18 +193,92 @@ Daemon restart check (every 5 minutes)
 
     "5")
 
-      # compress maps for faster upload
-      find "$SRCDS_DIR"/"$SERVER_GAME"/maps -name "*.bsp" -exec sh -c '
-      [ ! -f "$1.bz2" ] && bzip2 -k -1 "$1"
-    ' sh {} \;
-      dialog --msgbox "$(ls -lSh "$SRCDS_DIR"/"$SERVER_GAME"/maps | wc -l) Maps compressed." 6 15
+      # local map directory
+      MAP_DIR="$SRCDS_DIR/$SERVER_GAME/maps"
 
-      # fastdl status
-      if [[ "$(grep -c "sv_downloadurl" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg)" -eq "1" ]]; then
-        DOWNLOAD_URL="$(grep "sv_downloadurl" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg | awk '{ print $NF }' | tr -d '"')"
-        dialog --msgbox "FastDL: $DOWNLOAD_URL" 6 35
-      fi
+      while true; do
+        ACTION=$(dialog --no-cancel --clear --title "FastDL Menu" \
+          --menu "Choose action:" 11 36 5 \
+          1 "Show FastDL Status" \
+          2 "Compress Maps for FastDL" \
+          3 "Upload Maps to VPS" \
+          0 "Exit" 3>&1 1>&2 2>&3)
 
+        case $ACTION in
+
+        "1")
+
+          # fastDL status check
+          NUM_BSP=$(ls "$MAP_DIR"/*.bsp 2>/dev/null | wc -l)
+          NUM_COMPRESSED=$(ls "$MAP_DIR"/*.bsp.bz2 2>/dev/null | wc -l)
+
+          TOTAL_BSP_BYTES=$(find "$MAP_DIR" -type f -name "*.bsp" -exec stat -c%s {} \; | awk '{sum+=$1} END {print sum}')
+          TOTAL_BSP_HUMAN=$(awk -v size="$TOTAL_BSP_BYTES" 'BEGIN{if(size<1024){print size " B"} else if(size<1048576){printf "%.1f KB", size/1024} else if(size<1073741824){printf "%.1f MB", size/1048576} else {printf "%.1f GB", size/1073741824}}')
+          TOTAL_BZ2_BYTES=$(find "$MAP_DIR" -type f -name "*.bsp.bz2" -exec stat -c%s {} \; | awk '{sum+=$1} END {print sum}')
+          TOTAL_BZ2_HUMAN=$(awk -v size="$TOTAL_BZ2_BYTES" 'BEGIN{if(size<1024){print size " B"} else if(size<1048576){printf "%.1f KB", size/1024} else if(size<1073741824){printf "%.1f MB", size/1048576} else {printf "%.1f GB", size/1073741824}}')
+
+          FASTDL_DWN_URL=$(grep -m1 "sv_downloadurl" "$SRCDS_DIR/$SERVER_GAME/cfg/server.cfg" | awk '{print $NF}' | tr -d '"')
+
+          [[ "$FASTDL_DWN_URL" != */ ]] && FASTDL_DWN_URL="$FASTDL_DWN_URL/"
+
+          ONLINE_MAP_CHECK=$(ls "$MAP_DIR"/*.bsp.bz2 2>/dev/null | head -n1 | xargs -n1 basename)
+
+          FASTDL_STATUS="No maps"
+          FASTDL_SPEED="N/A"
+
+          if [[ -n "$ONLINE_MAP_CHECK" ]]; then
+            if curl -fsI "$FASTDL_DWN_URL/maps/$ONLINE_MAP_CHECK" >/dev/null; then
+              FASTDL_STATUS="OK"
+              FASTDL_SPEED=$(curl -o /dev/null -s -w "%{speed_download}" "$FASTDL_DWN_URL/maps/$ONLINE_MAP_CHECK" | awk '{printf "%.1f KB/s", $1/1024}')
+            else
+              FASTDL_STATUS="Offline, no maps on server!"
+            fi
+          fi
+
+          # dialog output
+          FASTDL_FILES="N/A"
+          FASTDL_MAPS="$NUM_COMPRESSED (.bsp.bz2)"
+          FASTDL_SIZE="$TOTAL_BZ2_HUMAN (.bsp.bz2) / $TOTAL_BSP_HUMAN (.bsp)"
+          FASTDL_OUTPUT="FastDL Status.: $FASTDL_STATUS
+FastDL URL....: $FASTDL_DWN_URL
+Down Speed....: $FASTDL_SPEED
+Server Files..: $FASTDL_FILES
+Server Maps...: $FASTDL_MAPS
+Total Size....: $FASTDL_SIZE"
+          WIDTH=$(($(echo "$FASTDL_OUTPUT" | wc -L) + 5))
+          dialog --msgbox "$FASTDL_OUTPUT" 10 "$WIDTH"
+          ;;
+
+        "2")
+
+          # compress maps
+          find "$MAP_DIR" -name "*.bsp" -exec sh -c '[ ! -f "$1.bz2" ] && bzip2 -k -1 "$1"' sh {} \;
+          NUM_COMPRESSED=$(ls "$MAP_DIR"/*.bsp.bz2 2>/dev/null | wc -l)
+          FASTDL_COM_OUTPUT="$NUM_COMPRESSED maps are now compressed (.bsp.bz2)"
+          WIDTH="$(echo "$(echo "$FASTDL_COM_OUTPUT" | wc -L)+5" | bc 2>/dev/null)"
+          dialog --msgbox "$NUM_COMPRESSED maps are now compressed (.bsp.bz2)" 5 "$WIDTH"
+          ;;
+
+        "3")
+
+          # upload maps (rsync)
+          VPS_USER=$(dialog --inputbox "Enter VPS SSH username:" 8 40 3>&1 1>&2 2>&3 3>&1)
+          VPS_HOST=$(dialog --inputbox "Enter VPS hostname or IP:" 8 40 3>&1 1>&2 2>&3 3>&1)
+          VPS_FASTDL_DIR=$(dialog --inputbox "Enter VPS FastDL directory (e.g., /var/www/html/cstrike):" 8 50 3>&1 1>&2 2>&3 3>&1)
+          rsync -avz "$MAP_DIR/"*.bsp "$VPS_USER@$VPS_HOST:$VPS_FASTDL_DIR/maps/"
+          rsync -avz "$MAP_DIR/"*.bsp.bz2 "$VPS_USER@$VPS_HOST:$VPS_FASTDL_DIR/maps/"
+          FASTDL_UP_OUTPUT="$FASTDL_MAPS Maps uploaded to FastDL VPS."
+          WIDTH="$(echo "$(echo "$FASTDL_UP_OUTPUT" | wc -L)+5" | bc 2>/dev/null)"
+          dialog --msgbox "$FASTDL_UP_OUTPUT" 5 "$WIDTH"
+          ;;
+
+        "0")
+
+          clear
+          return
+          ;;
+        esac
+      done
       ;;
 
     "6")
