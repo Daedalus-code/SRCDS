@@ -197,12 +197,12 @@ Daemon restart check (every 5 minutes)
       find "$SRCDS_DIR"/"$SERVER_GAME"/maps -name "*.bsp" -exec sh -c '
       [ ! -f "$1.bz2" ] && bzip2 -k -1 "$1"
     ' sh {} \;
-      dialog --msgbox "$(ls -lSh "$SRCDS_DIR"/"$SERVER_GAME"/maps | wc -l) Maps compressed." 5 15
+      dialog --msgbox "$(ls -lSh "$SRCDS_DIR"/"$SERVER_GAME"/maps | wc -l) Maps compressed." 6 15
 
       # fastdl status
       if [[ "$(grep -c "sv_downloadurl" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg)" -eq "1" ]]; then
         DOWNLOAD_URL="$(grep "sv_downloadurl" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg | awk '{ print $NF }' | tr -d '"')"
-        dialog --msgbox "FastDL: $DOWNLOAD_URL" 5 35
+        dialog --msgbox "FastDL: $DOWNLOAD_URL" 6 35
       fi
 
       ;;
