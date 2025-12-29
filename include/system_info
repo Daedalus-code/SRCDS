@@ -78,9 +78,14 @@ MEM_TOTAL_MB=$((MEM_TOTAL / 1024))
 MEM_USED_MB=$((MEM_USED / 1024))
 SWAP_TOTAL_MB=$((SWAP_TOTAL / 1024))
 SWAP_USED_MB=$((SWAP_USED / 1024))
+# total memory
+TOTAL_MEM_MB=$((MEM_TOTAL_MB + SWAP_TOTAL_MB))
+# total memory used
+TOTAL_USED_MEM_MB=$((MEM_USED_MB + SWAP_USED_MB))
 # percentages
 MEM_PCT=$((MEM_USED * 100 / MEM_TOTAL))
 SWAP_PCT=$((SWAP_TOTAL > 0 ? SWAP_USED * 100 / SWAP_TOTAL : 0))
+TOTAL_PCT=$((TOTAL_USED_MEM_MB * 100 / TOTAL_MEM_MB))
 
 ################################################################################
 # srcds system
