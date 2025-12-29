@@ -110,11 +110,11 @@ srcds_system() {
       "Swap Used....:" "$SWAP_USED_MB" "$SWAP_TOTAL_MB" "$SWAP_PCT"
 
     echo "Disk Usage...:"
-    printf "  %-12s %6s %6s %6s\n" "Mount" "Used" "Total" "Use%"
-    printf "  %-12s %6s %6s %6s\n" "-----" "----" "-----" "----"
+    printf " %-12s %6s %6s %6s\n" "Mount" "Used" "Total" "Use%"
+    printf " %-12s %6s %6s %6s\n" "-----" "----" "-----" "----"
 
     df -BGB | awk 'NR>1 && $1 !~ /tmpfs|udev/ {
-        printf "  %-12s %6s %6s %6s\n", $6, $3, $2, $5
+        printf " %-12s %6s %6s %6s\n", $6, $3, $2, $5
       }'
   )" 0 0
 }
