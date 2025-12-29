@@ -104,9 +104,9 @@ srcds_system() {
     printf "%-14s %s°C (%s)\n" "CPU Temp.....:" "$CPU_TEMP" "$CPU_TYPE"
     printf "%-14s %s°C (%s)\n\n" "Battery Temp.:" "$BATTERY_TEMP" "$BATTERY_TYPE"
 
-    printf "%-14s %.1f GB / %.1f GB (%s%%)\n" \
+    printf "%-14s %.1f MB / %.1f MB (%s%%)\n" \
       "Memory Used..:" "$MEM_USED_MB" "$MEM_TOTAL_MB" "$MEM_PCT"
-    printf "%-14s %.1f GB / %.1f GB (%s%%)\n\n" \
+    printf "%-14s %.1f MB / %.1f MB (%s%%)\n\n" \
       "Swap Used....:" "$SWAP_USED_MB" "$SWAP_TOTAL_MB" "$SWAP_PCT"
 
     echo "Disk Usage...:"
