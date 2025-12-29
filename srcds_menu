@@ -318,14 +318,12 @@ function srcds_logs() {
   "7")
 
     CRON_LOGS="$(cat "$HOME"/bin/include/cron*.log 2>/dev/null | sort | uniq)"
-    WIDTH="$(echo "$(echo "$CRON_LOGS" | wc -L)+11" | bc 2>/dev/null)"
-    LENGTH="15"
     if [ -z "$CRON_LOGS" ]; then
       dialog --msgbox "No log files found" 5 24
     else
       # keep n lines
       echo "$(tail -1440 "$HOME"/bin/include/cron.log 2>/dev/null)" >"$HOME"/bin/include/cron.log
-      dialog --msgbox "$CRON_LOGS" "$LENGTH" "$WIDTH"
+      dialog --msgbox "$CRON_LOGS" 0 0
     fi
     srcds_logs # go back to configs menu
     ;;
