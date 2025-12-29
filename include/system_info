@@ -77,4 +77,34 @@ MEM_FREE_MB=$((MEM_AVAILABLE / 1024))
 # calculate percentage used
 MEM_PCT=$((MEM_USED * 100 / MEM_TOTAL))
 
+################################################################################
+# srcds system
+################################################################################
+
+srcds_system() {
+  dialog --no-collapse --msgbox "$(
+
+    printf "%-16s %s\n" "Users........:" "$USERS ($(users))"
+    printf "%-16s %s\n" "Hostname.....:" "$HOST"
+    printf "%-16s %s\n" "Uptime.......:" "$UPTIME"
+    printf "%-16s %s\n" "Load Avg.....:" "$LOAD"
+    printf "%-16s %s\n\n" "IP Address...:" "$IP"
+
+    printf "%-16s %s\n" "CPU Model....:" "$CPU_MODEL"
+    printf "%-16s %s°C (%s)\n" "CPU Temp.....:" "$CPU_TEMP" "$CPU_TYPE"
+    printf "%-16s %s°C (%s)\n\n" "Battery Temp.:" "$BATTERY_TEMP" "$BATTERY_TYPE"
+
+    printf "%-16s %.1f GB / %.1f GB (%s%%)\n\n" \
+      "Memory Used..:" "$MEM_USED" "$MEM_TOTAL" "$MEM_PCT"
+
+    echo "Disk Usage...:"
+    printf "  %-12s %6s %6s %6s\n" "Mount" "Used" "Total" "Use%"
+    printf "  %-12s %6s %6s %6s\n" "-----" "----" "-----" "----"
+
+    df -BGB | awk 'NR>1 && $1 !~ /tmpfs|udev/ {
+        printf "  %-12s %6s %6s %6s\n", $6, $3, $2, $5
+      }'
+  )" 0 0
+}
+
 # END

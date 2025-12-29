@@ -186,8 +186,8 @@ function srcds_configs() {
 function srcds_logs() {
 
   # total log lines
-  TOTAL_LINES="$(wc -l "$HOME"/bin/include/cron*.log "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | tail -1 | awk '{ print $1 }')"
-  TOTAL_SIZE=$(stat -c%s "$HOME"/bin/include/cron*.log "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | awk '{sum += $1} END {print sum}')
+  TOTAL_LINES="$(wc -l "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | tail -1 | awk '{ print $1 }')"
+  TOTAL_SIZE=$(stat -c%s "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | awk '{sum += $1} END {print sum}')
 
   if [[ $TOTAL_SIZE -ge 1073741824 ]]; then
     TOTAL_SIZE="$(awk "BEGIN {printf \"%.2f\", $TOTAL_SIZE/1024/1024/1024}") GB"
@@ -323,6 +323,8 @@ function srcds_logs() {
     if [ -z "$CRON_LOGS" ]; then
       dialog --msgbox "No log files found" 5 24
     else
+      # keep n lines
+      echo "$(tail -1440 "$HOME"/bin/include/cron.log 2>/dev/null)" >"$HOME"/bin/include/cron.log
       dialog --msgbox "$CRON_LOGS" "$LENGTH" "$WIDTH"
     fi
     srcds_logs # go back to configs menu
@@ -336,7 +338,7 @@ function srcds_logs() {
       dialog --msgbox "Server already running!" 5 28
       return 1
     fi
-    rm "$HOME"/bin/include/cron*.log "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* &>/dev/null
+    rm "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* &>/dev/null
     ;;
   esac
 }
@@ -380,36 +382,6 @@ function srcds_update() {
   clear
   echo "$(date | xargs)" >"$HOME"/bin/updated
   cd && clear && exit
-}
-
-################################################################################
-# srcds system
-################################################################################
-
-srcds_system() {
-  dialog --no-collapse --msgbox "$(
-
-    printf "%-16s %s\n" "Users........:" "$USERS ($(users))"
-    printf "%-16s %s\n" "Hostname.....:" "$HOST"
-    printf "%-16s %s\n" "Uptime.......:" "$UPTIME"
-    printf "%-16s %s\n" "Load Avg.....:" "$LOAD"
-    printf "%-16s %s\n\n" "IP Address...:" "$IP"
-
-    printf "%-16s %s\n" "CPU Model....:" "$CPU_MODEL"
-    printf "%-16s %s°C (%s)\n" "CPU Temp.....:" "$CPU_TEMP" "$CPU_TYPE"
-    printf "%-16s %s°C (%s)\n\n" "Battery Temp.:" "$BATTERY_TEMP" "$BATTERY_TYPE"
-
-    printf "%-16s %.1f GB / %.1f GB (%s%%)\n\n" \
-      "Memory Used..:" "$MEM_USED" "$MEM_TOTAL" "$MEM_PCT"
-
-    echo "Disk Usage...:"
-    printf "  %-12s %6s %6s %6s\n" "Mount" "Used" "Total" "Use%"
-    printf "  %-12s %6s %6s %6s\n" "-----" "----" "-----" "----"
-
-    df -BGB | awk 'NR>1 && $1 !~ /tmpfs|udev/ {
-        printf "  %-12s %6s %6s %6s\n", $6, $3, $2, $5
-      }'
-  )" 0 0
 }
 
 ################################################################################
@@ -641,8 +613,19 @@ else
   SCREEN_STATUS="NO"
 fi
 
-# memory function
-srcds_system_ram
+# hlstats.pl pid info
+HLSTATSX_PID_INFO="$(ps -p "$(pgrep hlstats.pl 2>/dev/null)" 2>/dev/null | column -t)"
+
+# if pid is running
+if [[ -n "$HLSTATSX_PID_INFO" ]]; then
+  HLSTATSX_STATUS="hlstatsx OK"
+fi
+# if no pid found but installed
+if [[ -z "$HLSTATSX_PID_INFO" && -d "$HOME"/HLstatsX ]]; then
+  HLSTATSX_STATUS="hlstatsx NO"
+else
+  HLSTATSX_STATUS=""
+fi
 
 HEIGHT="24"
 CHOICE_HEIGHT="10"
@@ -652,8 +635,8 @@ Address..: ${ACTIVE_WAN:?}:$SERVER_PORT
 Map......: $ACTIVE_MAP
 Players..: ${ACTIVE_IRL_AMOUNT:-0}/${ACTIVE_BOT_AMOUNT:-0}/${ACTIVE_MAX_AMOUNT:-0}
 CPU......: ${LOAD_PCT} % ${CPU_TEMP}°C
-Memory...: ${MEM_PCT} %
-Services.: screen $SCREEN_STATUS srcds $SRCDS_STATUS"
+Memory...: ${MEM_PCT} % ${MEM_USED}/${MEM_TOTAL}
+Services.: screen $SCREEN_STATUS srcds $SRCDS_STATUS $HLSTATSX_STATUS"
 WIDTH="$(($(echo "$MENU" | wc -L) + 5))"
 
 # if zero
