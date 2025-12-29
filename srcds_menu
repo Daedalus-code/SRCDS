@@ -614,14 +614,13 @@ else
 fi
 
 # hlstats.pl pid info
-HLSTATSX_PID_INFO="$(ps -p "$(pgrep hlstats.pl 2>/dev/null)" 2>/dev/null | column -t)"
-
+HLSTATSX_PID_INFO="$(ps -p "$(pgrep hlstats.pl 2>/dev/null)" 2>/dev/null | grep -c "PID")"
 # if pid is running
-if [[ "$(echo "$HLSTATSX_PID_INFO" | grep -c "PID")" -gt "0" ]]; then
+if [[ "$HLSTATSX_PID_INFO" -gt "0" ]]; then
   HLSTATSX_STATUS="hlstatsx OK"
 fi
 # if no pid found but installed
-if [[ "$(echo "$HLSTATSX_PID_INFO" | grep -c "PID")" -eq "0" && -d "$HOME"/HLstatsX ]]; then
+if [[ "$HLSTATSX_PID_INFO" -eq "0" && -d "$HOME"/HLstatsX ]]; then
   HLSTATSX_STATUS="hlstatsx NO"
 else
   HLSTATSX_STATUS=""
@@ -635,7 +634,7 @@ Address..: ${ACTIVE_WAN:?}:$SERVER_PORT
 Map......: $ACTIVE_MAP
 Players..: ${ACTIVE_IRL_AMOUNT:-0}/${ACTIVE_BOT_AMOUNT:-0}/${ACTIVE_MAX_AMOUNT:-0}
 CPU......: ${LOAD_PCT} % ${CPU_TEMP}°C
-Memory...: ${MEM_PCT} % ${MEM_USED}/${MEM_TOTAL}
+Memory...: ${MEM_PCT} % ${MEM_USED}/${MEM_TOTAL} MB
 Services.: screen $SCREEN_STATUS srcds $SRCDS_STATUS $HLSTATSX_STATUS"
 WIDTH="$(($(echo "$MENU" | wc -L) + 5))"
 
