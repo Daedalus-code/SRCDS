@@ -35,7 +35,7 @@ function srcds_options() {
       2 "Data Usage       Monitor network data"
       3 "crontab          Manage scheduled tasks"
       4 "ncdu             NCurses disk usage viewer"
-      5 "Compress         Faster upload for maps"
+      5 "FastDL           Faster map downloads"
       6 "Random           Password generator"
     )
 
@@ -197,7 +197,14 @@ Daemon restart check (every 5 minutes)
       find "$SRCDS_DIR"/"$SERVER_GAME"/maps -name "*.bsp" -exec sh -c '
       [ ! -f "$1.bz2" ] && bzip2 -k -1 "$1"
     ' sh {} \;
-      dialog --msgbox "$(ls -lSh "$SRCDS_DIR"/"$SERVER_GAME"/maps)" 0 0
+      dialog --msgbox "$(ls -lSh "$SRCDS_DIR"/"$SERVER_GAME"/maps | wc -l) Maps compressed." 0 0
+
+      # fastdl status
+      if [[ "$(grep -c "sv_downloadurl" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg)" -eq "1" ]]; then
+        DOWNLOAD_URL="$(grep "sv_downloadurl" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg | awk '{ print $NF }' |  tr -d '"')"
+        dialog --msgbox "" 0 0
+      fi
+
       ;;
 
     "6")
