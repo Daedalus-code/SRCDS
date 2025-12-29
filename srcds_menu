@@ -613,16 +613,17 @@ else
   SCREEN_STATUS="NO"
 fi
 
-# hlstats.pl pid info
-HLSTATSX_PID_INFO="$(ps -p "$(pgrep hlstats.pl 2>/dev/null)" 2>/dev/null | grep -c "PID")"
+# hlstats.pl pid
+HLSTATSX_PID="$(ps -p "$(pgrep hlstats.pl 2>/dev/null)" 2>/dev/null | grep -c "PID")"
 # if pid is running
-if [[ "$HLSTATSX_PID_INFO" -gt "0" ]]; then
+if [[ "$HLSTATSX_PID" -eq "1" ]]; then
   HLSTATSX_STATUS="hlstatsx OK"
 fi
-# if no pid found but installed
-if [[ "$HLSTATSX_PID_INFO" -eq "0" && -d "$HOME"/HLstatsX ]]; then
+# if no pid exist but installed
+if [[ "$HLSTATSX_PID" -eq "0" && -d "$HOME"/HLstatsX ]]; then
   HLSTATSX_STATUS="hlstatsx NO"
-else
+  # if no pid exist and not installed
+elif [[ "$HLSTATSX_PID" -eq "0" && ! -d "$HOME"/HLstatsX ]]; then
   HLSTATSX_STATUS=""
 fi
 
