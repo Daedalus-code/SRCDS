@@ -106,7 +106,8 @@ srcds_system() {
 
     printf "%-16s %.1f GB / %.1f GB (%s%%)\n\n" \
       "Memory Used..:" "$MEM_USED_MB" "$MEM_TOTAL_MB" "$MEM_PCT"
-    "Swap Used....:" "$SWAP_USED_MB" "$SWAP_TOTAL_MB" "$SWAP_PCT"
+    printf "%-16s %.1f GB / %.1f GB (%s%%)\n\n" \
+      "Swap Used....:" "$SWAP_USED_MB" "$SWAP_TOTAL_MB" "$SWAP_PCT"
 
     echo "Disk Usage...:"
     printf "  %-12s %6s %6s %6s\n" "Mount" "Used" "Total" "Use%"
