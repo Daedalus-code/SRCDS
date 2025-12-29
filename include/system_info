@@ -64,18 +64,23 @@ CPU_TYPE=$(</sys/class/thermal/thermal_zone1/type)
 # memory
 ################################################################################
 
-# read memory info
-MEM_TOTAL=$(grep -i MemTotal /proc/meminfo | awk '{print $2}')         # in KB
-MEM_FREE=$(grep -i MemFree /proc/meminfo | awk '{print $2}')           # in KB
-MEM_AVAILABLE=$(grep -i MemAvailable /proc/meminfo | awk '{print $2}') # in KB
-# calculate used memory (realistic: total - available)
+# read RAM
+MEM_TOTAL=$(awk '/MemTotal/ {print $2}' /proc/meminfo)
+MEM_AVAILABLE=$(awk '/MemAvailable/ {print $2}' /proc/meminfo)
+# read swap
+SWAP_TOTAL=$(awk '/SwapTotal/ {print $2}' /proc/meminfo)
+SWAP_FREE=$(awk '/SwapFree/ {print $2}' /proc/meminfo)
+SWAP_USED=$((SWAP_TOTAL - SWAP_FREE))
+# RAM used
 MEM_USED=$((MEM_TOTAL - MEM_AVAILABLE))
-# optional: convert to MB for readability
-MEM_TOTAL=$((MEM_TOTAL / 1024))
-MEM_USED=$((MEM_USED / 1024))
-MEM_FREE_MB=$((MEM_AVAILABLE / 1024))
-# calculate percentage used
+# convert to MB
+MEM_TOTAL_MB=$((MEM_TOTAL / 1024))
+MEM_USED_MB=$((MEM_USED / 1024))
+SWAP_TOTAL_MB=$((SWAP_TOTAL / 1024))
+SWAP_USED_MB=$((SWAP_USED / 1024))
+# percentages
 MEM_PCT=$((MEM_USED * 100 / MEM_TOTAL))
+SWAP_PCT=$((SWAP_TOTAL > 0 ? SWAP_USED * 100 / SWAP_TOTAL : 0))
 
 ################################################################################
 # srcds system
@@ -95,7 +100,8 @@ srcds_system() {
     printf "%-16s %s°C (%s)\n\n" "Battery Temp.:" "$BATTERY_TEMP" "$BATTERY_TYPE"
 
     printf "%-16s %.1f GB / %.1f GB (%s%%)\n\n" \
-      "Memory Used..:" "$MEM_USED" "$MEM_TOTAL" "$MEM_PCT"
+      "Memory Used..:" "$MEM_USED_MB" "$MEM_TOTAL_MB" "$MEM_PCT"
+    "Swap Used....:" "$SWAP_USED_MB" "$SWAP_TOTAL_MB" "$SWAP_PCT"
 
     echo "Disk Usage...:"
     printf "  %-12s %6s %6s %6s\n" "Mount" "Used" "Total" "Use%"
