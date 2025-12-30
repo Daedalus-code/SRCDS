@@ -84,6 +84,26 @@ SWAP_PCT=$((SWAP_TOTAL > 0 ? SWAP_USED * 100 / SWAP_TOTAL : 0))
 TOTAL_PCT=$((TOTAL_USED_MEM_MB * 100 / TOTAL_MEM_MB))
 
 ################################################################################
+# network
+################################################################################
+
+# get primary network interface (skip loopback)
+NET_IFACE=$(ip -o link show | awk -F': ' '{print $2}' | grep -v lo | head -n1)
+
+# get RX and TX bytes in MB
+RX_BYTES=$(cat /sys/class/net/$NET_IFACE/statistics/rx_bytes)
+TX_BYTES=$(cat /sys/class/net/$NET_IFACE/statistics/tx_bytes)
+RX_MB=$(awk -v b="$RX_BYTES" 'BEGIN {printf "%.2f", b/1024/1024}')
+TX_MB=$(awk -v b="$TX_BYTES" 'BEGIN {printf "%.2f", b/1024/1024}')
+
+# get link speed (requires ethtool)
+if command -v ethtool >/dev/null 2>&1; then
+  LINK_SPEED=$(ethtool $NET_IFACE 2>/dev/null | awk -F: '/Speed/ {gsub(" ","",$2); print $2}')
+else
+  LINK_SPEED="N/A"
+fi
+
+################################################################################
 # space
 ################################################################################
 
@@ -98,22 +118,27 @@ SPACE_PCT=$(df -BG / | awk 'NR==2 {print $5}')
 
 srcds_system() {
   dialog --no-collapse --msgbox "$(
-
-    printf "%-14s %s\n" "Users........:" "$USERS ($(users))"
+    # system
     printf "%-14s %s\n" "Hostname.....:" "$HOST"
+    printf "%-14s %s\n" "Users........:" "$USERS ($(users))"
     printf "%-14s %s\n" "Uptime.......:" "$UPTIME"
     printf "%-14s %s\n" "Load Avg.....:" "$LOAD"
     printf "%-14s %s\n\n" "IP Address...:" "$IP"
-
+    # network
+    printf "%-14s %s\n" "Interface....:" "$NET_IFACE"
+    printf "%-14s %s\n" "Speed........:" "$LINK_SPEED"
+    printf "%-14s %s\n" "Download.....:" "${RX_MB}MB"
+    printf "%-14s %s\n\n" "Upload.......:" "${TX_MB}MB"
+    # cpu temperatures
     printf "%-14s %s\n" "CPU Model....:" "$CPU_MODEL"
     printf "%-14s %s°C (%s)\n" "CPU Temp.....:" "$CPU_TEMP" "$CPU_TYPE"
     printf "%-14s %s°C (%s)\n\n" "Battery Temp.:" "$BATTERY_TEMP" "$BATTERY_TYPE"
-
+    # memory
     printf "%-14s %.1f MB / %.1f MB (%s%%)\n" \
       "Memory Used..:" "$MEM_USED_MB" "$MEM_TOTAL_MB" "$MEM_PCT"
     printf "%-14s %.1f MB / %.1f MB (%s%%)\n\n" \
       "Swap Used....:" "$SWAP_USED_MB" "$SWAP_TOTAL_MB" "$SWAP_PCT"
-
+    # disk
     printf "%-14s %s\n" "Disk Total...:" "$SPACE_TOTAL"
     printf "%-14s %s (%s)\n" "Disk Used....:" "$SPACE_USED" "$SPACE_PCT"
     printf "%-14s %s\n" "Disk Free....:" "$SPACE_FREE"

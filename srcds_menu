@@ -310,6 +310,8 @@ function srcds_logs() {
     if [ -z "$SCREEN_LOGS" ]; then
       dialog --msgbox "No log files found" 5 24
     else
+      # keep n lines
+      echo "$(tail -1440 "$HOME"/bin/include/screenlog.0 2>/dev/null)" >"$HOME"/bin/include/screenlog.0
       dialog --tailbox "$SCREEN_LOGS" 30 121
     fi
     srcds_logs # go back to configs menu

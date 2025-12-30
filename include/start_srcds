@@ -38,9 +38,6 @@ if ! screen -list 2>/dev/null | grep -q "[.]srcds_screen"; then
     +maxplayers "$SERVER_MAX" +ip "$SERVER_IP"
 else
   echo "Server is already running on port $SERVER_PORT"
-  # tail log
-  echo "$(tail -21 "$HOME"/bin/include/cron.log 2>/dev/null | egrep -v "/|:|-")" \
-    >"$HOME"/bin/include/cron.log
 fi
 
 # END
