@@ -632,8 +632,8 @@ MENU="Host.....: $ACTIVE_HOSTNAME
 Address..: ${ACTIVE_WAN:?}:$SERVER_PORT
 Map......: $ACTIVE_MAP
 Players..: ${ACTIVE_IRL_AMOUNT:-0}/${ACTIVE_BOT_AMOUNT:-0}/${ACTIVE_MAX_AMOUNT:-0}
-CPU......: ${LOAD_PCT} % ${CPU_TEMP}°C
-Memory...: ${TOTAL_PCT} % ${TOTAL_USED_MEM_MB}/${TOTAL_MEM_MB} MB
+CPU......: ${LOAD_PCT}% ${CPU_TEMP}°C
+Memory...: ${TOTAL_PCT}% ${TOTAL_USED_MEM_MB}/${TOTAL_MEM_MB} MB
 Services.: screen $SCREEN_STATUS srcds $SRCDS_STATUS $HLSTATSX_STATUS"
 WIDTH="$(($(echo "$MENU" | wc -L) + 5))"
 
