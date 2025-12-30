@@ -24,29 +24,19 @@
 
 source "$HOME/bin/include/srcds.conf"
 
-################################################################################
-# generate bots
-################################################################################
-
 function srcds_bots() {
 
   BOT_DIFFICULTY=$(grep -E "^bot_difficulty" "$SRCDS_DIR/$SERVER_GAME/cfg/server.cfg" | awk '{print $2}')
   BOT_DIFFICULTY=${BOT_DIFFICULTY:-2}
 
-  if [[ ! -s "$BOTDIR/names.txt" ]]; then
-    dialog --msgbox "No names found in names.txt!" 5 32
-    return 1
-  fi
-
-  mapfile -t NAMES <"$BOTDIR/names.txt"
+  mapfile -t NAMES <"$BOTDIR/names.txt" || return 1
 
   select_random() {
-    local ARR=("$@")
-    echo "${ARR[$((RANDOM % ${#ARR[@]}))]}"
+    local A=("$@")
+    echo "${A[$((RANDOM % ${#A[@]}))]}"
   }
-
   rand_range() { echo $((RANDOM % ($2 - $1 + 1) + $1)); }
-  rand_float() { awk -v min="$1" -v max="$2" 'BEGIN{srand(); printf "%.2f", min+rand()*(max-min)}'; }
+  rand_float() { awk -v a="$1" -v b="$2" 'BEGIN{srand();printf "%.2f",a+rand()*(b-a)}'; }
 
   USED_NAMES=()
 
@@ -62,31 +52,29 @@ function srcds_bots() {
 
   for N in "${NAMES[@]}"; do
     case "$N" in
-    noob_*) NOOB_NAMES+=("${N#noob_}") ;;
+    noob_* | eco_* | panic_*) NOOB_NAMES+=("${N#*_}") ;;
     casual_*) CASUAL_NAMES+=("${N#casual_}") ;;
     pro_*) PRO_NAMES+=("${N#pro_}") ;;
-    elite_*) ELITE_NAMES+=("${N#elite_}") ;;
+    elite_* | smurf_*) ELITE_NAMES+=("${N#*_}") ;;
     *) NEUTRAL_NAMES+=("$N") ;;
     esac
   done
 
   get_unique_name() {
     local POOL=("$@")
-    [[ ${#POOL[@]} -eq 0 ]] && POOL=("${NAMES[@]}")
-    local NAME
-    while true; do
-      NAME=$(select_random "${POOL[@]}")
-      [[ ! " ${USED_NAMES[*]} " =~ " $NAME " ]] && break
+    while :; do
+      N=$(select_random "${POOL[@]}")
+      [[ ! " ${USED_NAMES[*]} " =~ " $N " ]] && break
     done
-    USED_NAMES+=("$NAME")
-    echo "$NAME"
+    USED_NAMES+=("$N")
+    echo "$N"
   }
 
   ##############################################################################
-  # ask bot count
+  # bot count
   ##############################################################################
 
-  dialog --inputbox "($(wc -l "$BOTDIR/names.txt" | awk '{print $1 }')) Names | Enter number:" 7 46 20 2>/tmp/bot_count
+  dialog --inputbox "Bots to generate:" 7 40 24 2>/tmp/bot_count
   NUM_PROFILES=$(cat /tmp/bot_count)
   [[ -z "$NUM_PROFILES" || "$NUM_PROFILES" -le 0 ]] && return 1
 
@@ -103,55 +91,35 @@ Default
     Cost = 0
 End
 
-Template Easy
-    Difficulty = EASY
-End
-
-Template Normal
-    Difficulty = NORMAL
-End
-
-Template Hard
-    Difficulty = HARD
-End
-
-Template Expert
-    Difficulty = EXPERT
-End
+Template Easy    Difficulty = EASY    End
+Template Normal  Difficulty = NORMAL  End
+Template Hard    Difficulty = HARD    End
+Template Expert  Difficulty = EXPERT  End
 
 Template Rifle
     WeaponPreference = ak47
     WeaponPreference = m4a1
     WeaponPreference = galil
     WeaponPreference = famas
-    WeaponPreference = sg552
-    WeaponPreference = aug
     WeaponPreference = deagle
 End
 
-Template Sniper
-    WeaponPreference = awp
-End
+Template Sniper  WeaponPreference = awp End
+Template Shotgun WeaponPreference = xm1014 WeaponPreference = m3 End
+Template Spray   WeaponPreference = p90 WeaponPreference = mp5 WeaponPreference = mac10 End
+Template Knife   WeaponPreference = knife End
 
-Template Shotgun
-    WeaponPreference = xm1014
-    WeaponPreference = m3
-End
-
-Template Spray
-    WeaponPreference = p90
-    WeaponPreference = mp5
-    WeaponPreference = mac10
-    WeaponPreference = ump
-End
-
-Template Knife
-    WeaponPreference = knife
+Template Eco
+    WeaponPreference = glock
+    WeaponPreference = usp
+    WeaponPreference = p228
+    WeaponPreference = deagle
+    Cost = 1
 End
 EOF
 
   ##############################################################################
-  # difficulty distribution (IMPORTANT)
+  # difficulty distribution
   ##############################################################################
 
   case "$BOT_DIFFICULTY" in
@@ -161,7 +129,7 @@ EOF
   esac
 
   ##############################################################################
-  # generate bots
+  # generate
   ##############################################################################
 
   (
@@ -169,7 +137,6 @@ EOF
 
       DIFF=$(select_random "${DIFF_POOL[@]}")
 
-      # name → personality bias
       NAME_POOL=("${NEUTRAL_NAMES[@]}")
       [[ "$DIFF" == "Easy" ]] && NAME_POOL+=("${NOOB_NAMES[@]}")
       [[ "$DIFF" == "Normal" ]] && NAME_POOL+=("${CASUAL_NAMES[@]}")
@@ -181,30 +148,74 @@ EOF
       SKIN=$((RANDOM % 5))
       VOICE=$((RANDOM % 44 + 85))
 
-      # global stat variance (shared by ALL)
+      # global variance
       SKILL=$(rand_range 15 95)
       AGGR=$(rand_range 15 95)
       REACT=$(rand_float 0.18 0.65)
 
-      # personality roll
-      PERSONALITY=$(select_random \
-        generalist generalist \
-        rifle_main rifle_main \
-        awp_freak \
-        shotgun_rat \
-        sprayer \
-        knife_maniac)
+      ##########################################################################
+      # NAME-BASED HARD LOCKS (absolute priority)
+      ##########################################################################
 
-      case "$PERSONALITY" in
-      generalist) WEAPON=$(select_random Rifle Spray Shotgun) ;;
-      rifle_main) WEAPON="Rifle" ;;
-      awp_freak) WEAPON="Sniper" ;;
-      shotgun_rat) WEAPON="Shotgun" ;;
-      sprayer) WEAPON="Spray" ;;
-      knife_maniac)
+      case "$NAME" in
+      awp_*)
+        WEAPON="Sniper"
+        ;;
+      knife_*)
         WEAPON="Knife"
-        AGGR=$(rand_range 80 100)
+        AGGR=95
         SKILL=$(rand_range 10 40)
+        ;;
+      eco_*)
+        WEAPON="Eco"
+        SKILL=$(rand_range 15 40)
+        AGGR=$(rand_range 20 40)
+        REACT=$(rand_float 0.35 0.60)
+        ;;
+      panic_*)
+        WEAPON=$(select_random Rifle Spray)
+        AGGR=$(rand_range 5 20)
+        REACT=$(rand_float 0.18 0.25)
+        ;;
+      smurf_*)
+        DIFF="Easy"
+        WEAPON=$(select_random Rifle Sniper)
+        SKILL=$(rand_range 85 95)
+        AGGR=$(rand_range 70 90)
+        REACT=$(rand_float 0.18 0.22)
+        ;;
+      *)
+        PERSONALITY=$(select_random \
+          generalist generalist \
+          rifle_main rifle_main \
+          awp_freak \
+          shotgun_rat \
+          sprayer \
+          panic_bot \
+          eco_bot \
+          knife_maniac)
+
+        case "$PERSONALITY" in
+        generalist) WEAPON=$(select_random Rifle Spray Shotgun) ;;
+        rifle_main) WEAPON="Rifle" ;;
+        awp_freak) WEAPON="Sniper" ;;
+        shotgun_rat) WEAPON="Shotgun" ;;
+        sprayer) WEAPON="Spray" ;;
+        eco_bot)
+          WEAPON="Eco"
+          SKILL=$(rand_range 15 35)
+          ;;
+        panic_bot)
+          WEAPON=$(select_random Rifle Spray)
+          AGGR=$(rand_range 5 25)
+          REACT=$(rand_float 0.18 0.25)
+          ;;
+        knife_maniac)
+          WEAPON="Knife"
+          AGGR=100
+          SKILL=$(rand_range 10 35)
+          ;;
+        esac
         ;;
       esac
 
@@ -220,7 +231,7 @@ End
 EOF
 
       echo $((i * 100 / NUM_PROFILES))
-      echo "Generating bot $i of $NUM_PROFILES"
+      echo "Generating bot $i"
     done
   ) | dialog --gauge "Generating bot profiles..." 6 50 0
 
@@ -236,6 +247,7 @@ EOF
     mv botprofile.db "$SRCDS_DIR/$SERVER_GAME/custom/bots/botprofile_$RAND_SUFFIX.db"
     dialog --msgbox "Installed as botprofile_$RAND_SUFFIX.db\nBots: $NUM_PROFILES" 6 44
   fi
+  dialog --msgbox "Bot profiles generated!" 5 32
 }
 
 # END

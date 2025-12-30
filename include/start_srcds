@@ -24,16 +24,23 @@
 
 source "$HOME/bin/include/srcds.conf"
 
+################################################################################
+
+LOGFILE="$HOME/bin/include/screenlog.0"
+
 # if not running
 if ! screen -list 2>/dev/null | grep -q "[.]srcds_screen"; then
-  # start server with -debug, screenlog.0
-  screen -L -S srcds_screen -dm "$SRCDS_DIR"/srcds_run -debug \
+  # start server with screen logging to fixed location
+  screen -L -Logfile "$LOGFILE" -S srcds_screen -dm \
+    "$SRCDS_DIR"/srcds_run -debug \
     -usercon -console -game "$SERVER_GAME" \
-    -port "$SERVER_PORT" +map "$SERVER_MAP" +maxplayers "$SERVER_MAX" +ip "$SERVER_IP"
+    -port "$SERVER_PORT" +map "$SERVER_MAP" \
+    +maxplayers "$SERVER_MAX" +ip "$SERVER_IP"
 else
   echo "Server is already running on port $SERVER_PORT"
   # tail log
-  echo "$(tail -21 "$HOME"/bin/include/cron.log 2>/dev/null | egrep -v "/|:|-")" >"$HOME"/bin/include/cron.log
+  echo "$(tail -21 "$HOME"/bin/include/cron.log 2>/dev/null | egrep -v "/|:|-")" \
+    >"$HOME"/bin/include/cron.log
 fi
 
 # END
