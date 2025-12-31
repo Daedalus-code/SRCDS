@@ -274,7 +274,9 @@ Total Size....: $FASTDL_SIZE"
           # upload maps (rsync)
           VPS_USER=$(dialog --inputbox "Enter VPS SSH username:" 8 40 3>&1 1>&2 2>&3 3>&1)
           VPS_HOST=$(dialog --inputbox "Enter VPS hostname or IP:" 8 40 3>&1 1>&2 2>&3 3>&1)
-          VPS_FASTDL_DIR=$(dialog --inputbox "Enter VPS FastDL directory (e.g., /var/www/html/cstrike):" 8 50 3>&1 1>&2 2>&3 3>&1)
+          # default expected directory path
+          VPS_FASTDL_DEFAULT="/var/www/html/cstrike"
+          VPS_FASTDL_DIR=$(dialog --inputbox "Enter VPS FastDL directory (e.g., /var/www/html/cstrike):" 8 50 "$VPS_FASTDL_DEFAULT" 3>&1 1>&2 2>&3 3>&1)
 
           clear
           # compress maps before sync
