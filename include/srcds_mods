@@ -314,13 +314,13 @@ srcds_mods() {
 
   if [ -d "$HLSTATSX_DIR" ]; then
     HLSTATSX_INSTALLED="OK"
-
+    # hlstatsx version
     HLSTATSX_VER=$(
       perl -ne 'print $1 if /^\s*\$g_version\s*=\s*[\"\x27]([^\"\x27]+)/' \
         "$HLSTATSX_DIR/HLstats.plib" \
         "$HLSTATSX_DIR/hlstats.pl" 2>/dev/null | head -n1
     )
-
+    # if not available
     [ -z "$HLSTATSX_VER" ] && HLSTATSX_VER="unknown"
   else
     HLSTATSX_INSTALLED="N/A"
@@ -330,11 +330,10 @@ srcds_mods() {
   ##############################################################################
 
   # pid of hlstats.pl
-  HLSTATSX_PID=$(pgrep hlstats.pl)
+  HLSTATSX_PID=$(pgrep hlstats.pl 2>/dev/null)
   # if any data
   if [[ -n "$HLSTATSX_PID" ]]; then
-    ELAPSED=$(ps -p "$HLSTATSX_PID" -o etime= | tr -d ' ')
-
+    ELAPSED=$(ps -p "$HLSTATSX_PID" -o etime= | awk '{$1=$1}1')
     if [[ "$ELAPSED" =~ ^([0-9]+)-([0-9]+):([0-9]+):([0-9]+)$ ]]; then
       # DD-HH:MM:SS
       ((HOURS = ${BASH_REMATCH[1]} * 24 + ${BASH_REMATCH[2]}))
@@ -355,7 +354,11 @@ srcds_mods() {
       MINUTES=0
       SECONDS=0
     fi
-    HLSTATX_STATUS=$(printf "%02s:%02s:%02s" "$HOURS" "$MINUTES" "$SECONDS")
+    # zero fix
+    pad2() {
+      printf "%02d" "${1#0}"
+    }
+    HLSTATX_STATUS="$(pad2 "$HOURS"):$(pad2 "$MINUTES"):$(pad2 "$SECONDS")"
   else
     HLSTATX_STATUS="Offline"
   fi
