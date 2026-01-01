@@ -201,13 +201,16 @@ Daemon restart check (every 5 minutes)
       }
 
       while true; do
-        ACTION=$(dialog --no-cancel --clear --title "FastDL Menu" \
-          --menu "" 10 69 5 \
-          1 "Status           Show FastDL overview: maps, speeds, etc." \
-          2 "Compress         Compress .bsp maps to .bz2 for VPS" \
-          3 "Synchronize      Sync server maps to VPS (requires SSH)" \
-          0 "Exit             Return to main menu" \
-          3>&1 1>&2 2>&3)
+        ACTION=$(
+          dialog --no-cancel --clear --title "FastDL Menu" \
+            --menu "" 11 61 6 \
+            1 "Status           Display FastDL overview" \
+            2 "Compress         Compress .bsp map files" \
+            3 "Synchronize      Synchronize files (SSH required)" \
+            4 "Mapfiles         Display maps for the VPS" \
+            0 "Exit             Return to the main menu" \
+            3>&1 1>&2 2>&3
+        )
 
         case $ACTION in
 
@@ -288,6 +291,20 @@ Total Size....: $FASTDL_SIZE"
           FASTDL_UP_OUTPUT="$FASTDL_MAPS Maps uploaded to FastDL VPS."
           WIDTH="$(echo "$(echo "$FASTDL_UP_OUTPUT" | wc -L)+5" | bc 2>/dev/null)"
           dialog --msgbox "$FASTDL_UP_OUTPUT" 5 "$WIDTH"
+          ;;
+
+          # list maps
+
+        "4")
+
+          LIST_BSP_MAPS="$(ls -lSh "$MAP_DIR/"*.bsp 2>/dev/null)"
+          LIST_BSP_COUNT="$(echo "$LIST_BSP_MAPS" | grep -v "total" | wc -l)"
+
+          LIST_BZ2_MAPS="$(ls -lSh "$MAP_DIR/"*.bsp.bz2 2>/dev/null)"
+          LIST_BZ2_COUNT="$(echo "$LIST_BZ2_MAPS" | grep -v "total" | wc -l)"
+
+          dialog --title "Maps (.bsp): $LIST_BSP_COUNT" --msgbox "$LIST_BSP_MAPS" 20 0
+          dialog --title "Maps (.bsp.bz2): $LIST_BZ2_COUNT" --msgbox "$LIST_BZ2_MAPS" 20 0
           ;;
 
         "0")
