@@ -61,7 +61,6 @@ function srcds_options() {
     "6") random_password ;; # random password generate
     esac
   done
-  return 0
 }
 
 # END
