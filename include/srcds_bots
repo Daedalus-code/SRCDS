@@ -342,33 +342,36 @@ function srcds_bot_db_switch() {
 # bots
 ################################################################################
 
-# copy over extra db if not found
-if [[ ! -f "$BOTDIR"/Realistic_AI.db ]]; then
-  cp "$HOME"/bin/include/extra/bots/Realistic_AI.db "$BOTDIR"
-fi
+function srcds_bots() {
 
-HEIGHT="10"
-WIDTH="60"
-CHOICE_HEIGHT="3"
-MENU="Bot Options"
+  # copy over extra db if not found
+  if [[ ! -f "$BOTDIR"/Realistic_AI.db ]]; then
+    cp "$HOME"/bin/include/extra/bots/Realistic_AI.db "$BOTDIR"
+  fi
 
-OPTIONS=(
-  1 "New Bots       Generate new bot profiles"
-  2 "Names.txt      Manage names for bot generation"
-  3 "Switch DB      Switch active bot profile database"
-)
+  HEIGHT="10"
+  WIDTH="60"
+  CHOICE_HEIGHT="3"
+  MENU="Bot Options"
 
-CHOICE=$(dialog --clear \
-  --menu "$MENU" \
-  $HEIGHT $WIDTH $CHOICE_HEIGHT \
-  "${OPTIONS[@]}" \
-  2>&1 >/dev/tty)
+  OPTIONS=(
+    1 "New Bots       Generate new bot profiles"
+    2 "Names.txt      Manage names for bot generation"
+    3 "Switch DB      Switch active bot profile database"
+  )
 
-clear
-case $CHOICE in
-"1") srcds_bot_generate ;;  # generate bots
-"2") srcds_bot_names ;;     # names.txt
-"3") srcds_bot_db_switch ;; # switch bot profile
-esac
+  CHOICE=$(dialog --clear \
+    --menu "$MENU" \
+    $HEIGHT $WIDTH $CHOICE_HEIGHT \
+    "${OPTIONS[@]}" \
+    2>&1 >/dev/tty)
+
+  clear
+  case $CHOICE in
+  "1") srcds_bot_generate ;;  # generate bots
+  "2") srcds_bot_names ;;     # names.txt
+  "3") srcds_bot_db_switch ;; # switch bot profile
+  esac
+}
 
 # END
