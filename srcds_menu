@@ -69,7 +69,7 @@ SCRIPT_VERSION="${SCRIPT_VERSION//[[:space:]]/}"
 ################################################################################
 
 function srcds_console() {
-  if ! screen -list 2>/dev/null | grep -q "[.]srcds_screen"; then
+  if ! screen -list 2>/dev/null | grep -q '\.srcds_screen'; then
     dialog --msgbox "Server not running!" 5 24
     return 1
   fi
@@ -83,7 +83,7 @@ function srcds_console() {
 
 srcds_start() {
   # if already running
-  if screen -list 2>/dev/null | grep -q "[.]srcds_screen"; then
+  if screen -list 2>/dev/null | grep -q '\.srcds_screen'; then
     SRCDS_PID_INFO="$(ps -p "$(pgrep srcds_linux 2>/dev/null)" 2>/dev/null | column -t)"
     dialog --no-collapse --msgbox "Server already running!
 $SRCDS_PID_INFO" 0 0
@@ -338,7 +338,7 @@ function srcds_logs() {
 
   "0")
 
-    if screen -list 2>/dev/null | grep -q "[.]srcds_screen"; then
+    if screen -list 2>/dev/null | grep -q '\.srcds_screen'; then
       dialog --msgbox "Server already running!" 5 28
       return 1
     fi
@@ -426,7 +426,7 @@ function update_active() {
   # if greater than n
   if [[ "$ACTIVE_AMOUNT" -gt "0" ]]; then
     # update active players
-    grep -A"$ACTIVE_AMOUNT" "userid" "$HOME"/bin/include/screenlog.0 2>/dev/null | tail -"$ACTIVE_AMOUNT" | tr -d '#' >/tmp/usrid.tmp
+    grep -A"$ACTIVE_AMOUNT" "userid" "$HOME"/bin/include/screenlog.0 2>/dev/null | grep -v "rcon" | tail -"$ACTIVE_AMOUNT" | tr -d '#' | column -t >/tmp/usrid.tmp
   fi
 }
 update_active
@@ -435,7 +435,7 @@ update_active
 
 function srcds_active() {
 
-  if ! screen -list 2>/dev/null | grep -q "[.]srcds_screen"; then
+  if ! screen -list 2>/dev/null | grep -q '\.srcds_screen'; then
     dialog --msgbox "Server not running!" 5 24
     return 1
   fi
@@ -444,16 +444,16 @@ function srcds_active() {
 
   TMPFILE="/tmp/usrid.tmp"
 
+  [[ ! -f "$TMPFILE" ]] && {
+    dialog --msgbox "Player file not found:\n$TMPFILE" 8 50
+    return 1
+  }
+
   # fetch mysql credentials from hlstats.conf
   DB_HOST="$(grep DBHost "$HLSTATSX_DIR"/hlstats.conf | grep -v "#" | awk '{print $NF}' | tr -d '"' | awk -F: '{print $1}')"
   DB_USER="$(grep DBUsername "$HLSTATSX_DIR"/hlstats.conf | grep -v "#" | awk '{print $NF}' | tr -d '"')"
   DB_PASS="$(grep DBPassword "$HLSTATSX_DIR"/hlstats.conf | grep -v "#" | awk '{print $NF}' | tr -d '"')"
   DB_NAME="$(grep DBName "$HLSTATSX_DIR"/hlstats.conf | grep -v "#" | awk '{print $NF}' | tr -d '"')"
-
-  [[ ! -f "$TMPFILE" ]] && {
-    dialog --msgbox "Player file not found:\n$TMPFILE" 8 50
-    return 1
-  }
 
   MENU_ITEMS=()
   COUNTER=1
@@ -464,7 +464,7 @@ function srcds_active() {
     [[ "$LINE" =~ ^# ]] && continue     # skip commented lines
 
     # use counter as menu number, full line as menu text
-    MENU_ITEMS+=("$COUNTER" "$LINE")
+    MENU_ITEMS+=("  $COUNTER" "$LINE")
     ((COUNTER++))
   done <"$TMPFILE"
 
@@ -474,13 +474,20 @@ function srcds_active() {
     return 1
   }
 
-  HEIGHT=$((ITEM_COUNT + 7))
-  WIDTH="$(echo "$(echo "${MENU_ITEMS[@]}" | wc -L)+11" | bc 2>/dev/null)"
-  MENU_HEIGHT="$ITEM_COUNT"
-  ((MENU_HEIGHT > 15)) && MENU_HEIGHT="15"
+  HEIGHT=$((ITEM_COUNT + 6))
 
-  SELECTED=$(dialog --title "Connected Players" \
-    --menu "Select a player" \
+  MAX_WIDTH=0
+  for ((i = 1; i < ${#MENU_ITEMS[@]}; i += 2)); do
+    ((${#MENU_ITEMS[i]} > MAX_WIDTH)) && MAX_WIDTH=${#MENU_ITEMS[i]}
+  done
+
+  WIDTH=$((MAX_WIDTH + 11))
+
+  MENU_HEIGHT=$ITEM_COUNT
+  ((MENU_HEIGHT > 6)) && MENU_HEIGHT="6"
+
+  SELECTED=$(dialog --title "Players: ${ACTIVE_IRL_AMOUNT:-0} Bots: ${ACTIVE_BOT_AMOUNT:-0} Max: ${ACTIVE_MAX_AMOUNT:-0}" \
+    --menu "" \
     "$HEIGHT" "$WIDTH" "$MENU_HEIGHT" \
     "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3)
 
@@ -488,9 +495,8 @@ function srcds_active() {
 
   # get selected line text
   PLAYER_ROW=""
-  for ((i = 0; i < ${#MENU_ITEMS[@]}; i += 2)); do
-    [[ "${MENU_ITEMS[i]}" == "$SELECTED" ]] && PLAYER_ROW="${MENU_ITEMS[i + 1]}"
-  done
+  index=$(((SELECTED - 1) * 2 + 1))
+  PLAYER_ROW="${MENU_ITEMS[index]}"
 
   # extract player name (first quoted string)
   PLAYER_NAME=$(awk -F'"' '{print $2}' <<<"$PLAYER_ROW")
