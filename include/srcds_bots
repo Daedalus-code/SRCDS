@@ -339,20 +339,29 @@ function srcds_bot_db_switch() {
 }
 
 ################################################################################
+# edit bot profile
+################################################################################
+
+function srcds_bot_db_edit() {
+  nano "$BOTDIR/botprofile.db"
+}
+
+################################################################################
 # bots
 ################################################################################
 
 function srcds_bots() {
 
-  HEIGHT="10"
+  HEIGHT="11"
   WIDTH="60"
-  CHOICE_HEIGHT="3"
+  CHOICE_HEIGHT="4"
   MENU="Bot Options"
 
   OPTIONS=(
     1 "New Bots       Generate new bot profiles"
     2 "Names.txt      Manage names for bot generation"
     3 "Switch DB      Switch active bot profile database"
+    4 "Edit DB        Edit bot profile (expert)"
   )
 
   CHOICE=$(dialog --clear \
@@ -366,6 +375,7 @@ function srcds_bots() {
   "1") srcds_bot_generate ;;  # generate bots
   "2") srcds_bot_names ;;     # names.txt
   "3") srcds_bot_db_switch ;; # switch bot profile
+  "4") srcds_bot_db_edit ;;   # edit bot profile
   esac
 }
 
