@@ -39,7 +39,7 @@ function srcds_fastdl() {
         2 "Compress         Compress .bsp map files" \
         3 "Synchronize      Synchronize files (SSH required)" \
         4 "Mapfiles         Display maps for the VPS" \
-        0 "Exit             Return to the main menu" \
+        0 "Back             Return to the tool menu" \
         3>&1 1>&2 2>&3
     )
 
