@@ -135,6 +135,7 @@ function srcds_configs() {
     "$SRCDS_DIR/$SERVER_GAME/cfg/sourcemod"
     "$SRCDS_DIR/$SERVER_GAME/addons/sourcemod/configs"
     "$SRCDS_DIR/$SERVER_GAME/addons/sourcemod/gamedata"
+    "$SRCDS_DIR/$SERVER_GAME/addons/sourcemod/configs/mapscfg/"
   )
 
   OPTIONS=()
@@ -621,6 +622,11 @@ HLSTATSX_PID="$(ps -p "$(pgrep hlstats.pl 2>/dev/null)" 2>/dev/null | grep -c "P
 # if pid is running
 if [[ "$HLSTATSX_PID" -eq "1" ]]; then
   HLSTATSX_STATUS="hlstatsx OK"
+  # if not found
+  if [[ ! -f "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/plugins/disabled/hlstatsx.smx ]]; then
+    # copy hlstatsx.smx to disabled
+    cp "$HOME"/bin/include/extra/sourcemod/plugins/hlstatsx.smx "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/plugins/disabled/hlstatsx.smx
+  fi
 fi
 # if no pid exist but installed
 if [[ "$HLSTATSX_PID" -eq "0" && -d "$HOME"/HLstatsX ]]; then
