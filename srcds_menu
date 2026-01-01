@@ -133,8 +133,8 @@ function srcds_configs() {
     "$SRCDS_DIR/$SERVER_GAME/cfg/cssdm"
     "$SRCDS_DIR/$SERVER_GAME/cfg/metamod"
     "$SRCDS_DIR/$SERVER_GAME/cfg/sourcemod"
-    "$SRCDS_DIR/$SERVER_GAME/addons/sourcemod/configs"
     "$SRCDS_DIR/$SERVER_GAME/addons/sourcemod/gamedata"
+    "$SRCDS_DIR/$SERVER_GAME/addons/sourcemod/configs"
     "$SRCDS_DIR/$SERVER_GAME/addons/sourcemod/configs/mapscfg/"
   )
 
