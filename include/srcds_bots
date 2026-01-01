@@ -344,11 +344,6 @@ function srcds_bot_db_switch() {
 
 function srcds_bots() {
 
-  # copy over extra db if not found
-  if [[ ! -f "$BOTDIR"/Realistic_AI.db ]]; then
-    cp "$HOME"/bin/include/extra/bots/Realistic_AI.db "$BOTDIR"
-  fi
-
   HEIGHT="10"
   WIDTH="60"
   CHOICE_HEIGHT="3"
