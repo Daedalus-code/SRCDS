@@ -322,7 +322,7 @@ function srcds_bot_db_switch() {
 
   # exit immediately on Cancel/ESC
   if [ $EXIT_STATUS -ne 0 ]; then
-    continue
+    return
   fi
 
   # get the selected DB path
@@ -334,8 +334,8 @@ function srcds_bot_db_switch() {
     # move selected DB to botprofile.db
     cp "$SELECTED_DB" "${BOTDIR}_2"
     mv "$SELECTED_DB" "$BOTDIR/botprofile.db"
-    dialog --msgbox "Bot profile updated $SELECTED_NAME" 5 50
   fi
+  dialog --msgbox "Bot profile updated $SELECTED_NAME" 5 50
 }
 
 ################################################################################
