@@ -88,10 +88,15 @@ function srcds_options() {
       clear
       case $CHOICE in
 
-      "1")
+      ##########################################################################
+      # generate bots
+      ##########################################################################
 
-        srcds_bots
-        ;;
+      "1") srcds_bots ;;
+
+        ########################################################################
+        # names.txt
+        ########################################################################
 
       "2")
 
@@ -100,6 +105,10 @@ function srcds_options() {
         mv /tmp/nm.tmp "$BOTDIR"/names.txt
         nano "$BOTDIR"/names.txt
         ;;
+
+        ########################################################################
+        # switch bot profile
+        ########################################################################
 
       "3")
 
@@ -169,11 +178,14 @@ function srcds_options() {
       ;;
 
       ##########################################################################
+      # data usage
+      ##########################################################################
 
-    "2")
+    "2") data_usage ;;
 
-      data_usage
-      ;;
+      ##########################################################################
+      # crontab
+      ##########################################################################
 
     "3")
       dialog --msgbox "Awards generation and database cleanup (daily at midnight)
@@ -186,10 +198,15 @@ Daemon restart check (every 5 minutes)
       crontab -e
       ;;
 
-    "4")
+      ##########################################################################
+      # ncurses
+      ##########################################################################
 
-      ncdu "$HOME"
-      ;;
+    "4") ncdu "$HOME" ;;
+
+      ##########################################################################
+      # fastdl menu
+      ##########################################################################
 
     "5")
 
@@ -213,6 +230,10 @@ Daemon restart check (every 5 minutes)
         )
 
         case $ACTION in
+
+        ########################################################################
+        # status
+        ########################################################################
 
         "1")
 
@@ -262,15 +283,22 @@ Total Size....: $FASTDL_SIZE"
           dialog --msgbox "$FASTDL_OUTPUT" 9 "$WIDTH"
           ;;
 
+          ######################################################################
+          # compress maps
+          ######################################################################
+
         "2")
 
-          # compress maps
           compress_maps
           NUM_COMPRESSED=$(ls "$MAP_DIR"/*.bsp.bz2 2>/dev/null | wc -l)
           FASTDL_COM_OUTPUT="$NUM_COMPRESSED maps are now compressed (.bsp.bz2)"
           WIDTH="$(echo "$(echo "$FASTDL_COM_OUTPUT" | wc -L)+5" | bc 2>/dev/null)"
           dialog --msgbox "$NUM_COMPRESSED maps are now compressed (.bsp.bz2)" 5 "$WIDTH"
           ;;
+
+          ######################################################################
+          # synchronize maps
+          ######################################################################
 
         "3")
 
@@ -288,20 +316,23 @@ Total Size....: $FASTDL_SIZE"
           rsync -avz "$MAP_DIR/"*.bsp "$VPS_USER@$VPS_HOST:$VPS_FASTDL_DIR/maps/"
           rsync -avz "$MAP_DIR/"*.bsp.bz2 "$VPS_USER@$VPS_HOST:$VPS_FASTDL_DIR/maps/"
 
-          FASTDL_UP_OUTPUT="$FASTDL_MAPS Maps uploaded to FastDL VPS."
+          FASTDL_UP_OUTPUT="$FASTDL_MAPS Maps synchronized to FastDL VPS."
           WIDTH="$(echo "$(echo "$FASTDL_UP_OUTPUT" | wc -L)+5" | bc 2>/dev/null)"
           dialog --msgbox "$FASTDL_UP_OUTPUT" 5 "$WIDTH"
           ;;
 
+          ######################################################################
           # list maps
+          ######################################################################
 
         "4")
 
+          # bsp
           LIST_BSP_MAPS="$(ls -lSh "$MAP_DIR/"*.bsp 2>/dev/null)"
-          LIST_BSP_COUNT="$(echo "$LIST_BSP_MAPS" | grep -v "total" | wc -l)"
-
+          LIST_BSP_COUNT="$(echo "$LIST_BSP_MAPS" | grep -v "total" 2>/dev/null | wc -l)"
+          # bos.bz2
           LIST_BZ2_MAPS="$(ls -lSh "$MAP_DIR/"*.bsp.bz2 2>/dev/null)"
-          LIST_BZ2_COUNT="$(echo "$LIST_BZ2_MAPS" | grep -v "total" | wc -l)"
+          LIST_BZ2_COUNT="$(echo "$LIST_BZ2_MAPS" | grep -v "total" 2>/dev/null | wc -l)"
 
           dialog --title "Maps (.bsp): $LIST_BSP_COUNT" --msgbox "$LIST_BSP_MAPS" 20 0
           dialog --title "Maps (.bsp.bz2): $LIST_BZ2_COUNT" --msgbox "$LIST_BZ2_MAPS" 20 0
@@ -315,6 +346,10 @@ Total Size....: $FASTDL_SIZE"
         esac
       done
       ;;
+
+      ##########################################################################
+      # random password generate
+      ##########################################################################
 
     "6")
       dialog --inputbox "Enter the number of characters:" 7 36 10 2>/tmp/psam.tmp
