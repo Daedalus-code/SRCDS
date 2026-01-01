@@ -49,7 +49,7 @@ function srcds_options() {
 
     # exit loop if Cancel/ESC pressed
     if [ $EXIT_STATUS -ne 0 ]; then
-      break
+      return
     fi
 
     case $CHOICE in
