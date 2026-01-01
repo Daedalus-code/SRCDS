@@ -30,8 +30,10 @@ source "$HOME/bin/include/srcds.conf"
 source "$HOME/bin/include/srcds_bots"
 source "$HOME/bin/include/data_usage"
 source "$HOME/bin/include/srcds_mods"
-source "$HOME/bin/include/srcds_options"
 source "$HOME/bin/include/system_info"
+source "$HOME/bin/include/srcds_crontab"
+source "$HOME/bin/include/srcds_options"
+source "$HOME/bin/include/random_password"
 
 ################################################################################
 # srcds version

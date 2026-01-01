@@ -24,7 +24,16 @@
 
 source "$HOME/bin/include/srcds.conf"
 
-function srcds_bots() {
+################################################################################
+
+mkdir -p "$SRCDS_DIR"/"$SERVER_GAME"/custom/bots
+BOTDIR="$SRCDS_DIR/$SERVER_GAME/custom/bots"
+
+################################################################################
+# bot generate
+################################################################################
+
+function srcds_bot_generate() {
 
   BOT_DIFFICULTY=$(grep -E "^bot_difficulty" "$SRCDS_DIR/$SERVER_GAME/cfg/server.cfg" | awk '{print $2}')
   BOT_DIFFICULTY=${BOT_DIFFICULTY:-2}
@@ -249,5 +258,117 @@ EOF
   fi
   dialog --msgbox "Bot profiles generated!" 5 32
 }
+
+################################################################################
+# bot names
+################################################################################
+
+function srcds_bot_names() {
+  dialog --msgbox "Sorting $(wc -l "$BOTDIR"/names.txt | awk '{ print $1 }') names, keeping uniq" 5 "$(echo "$(wc -L "$BOTDIR"/names.txt | awk '{ print $1 }')+20" | bc 2>/dev/null)"
+  echo "$(cat "$BOTDIR"/names.txt 2>/dev/null | sort | uniq)" >/tmp/nm.tmp
+  mv /tmp/nm.tmp "$BOTDIR"/names.txt
+  nano "$BOTDIR"/names.txt
+}
+
+################################################################################
+# switch bot profile
+################################################################################
+
+function srcds_bot_db_switch() {
+  # check that the directory exists
+  [[ -d "$BOTDIR" ]] || {
+    echo "Bot directory not found: $BOTDIR"
+  }
+
+  # function to count names in a db
+  count_names() {
+    DB_FILE="$1"
+    [[ -f "$DB_FILE" ]] || {
+      echo 0
+      return
+    }
+    grep "+" "$DB_FILE" | grep -v "=" | wc -l
+  }
+
+  # get current active db
+  ACTIVE_DB="$BOTDIR/botprofile.db"
+
+  # build menu dynamically with columns
+  MENU=()
+  i=1
+  MAX_NAME_LEN=20 # adjust as needed for column width
+  for DB in "$BOTDIR"/*.db; do
+    [[ -f "$DB" ]] || continue
+    NAME=$(basename "$DB")
+    COUNT=$(count_names "$DB")
+    ACTIVE=""
+    [[ "$DB" == "$ACTIVE_DB" ]] && ACTIVE="<- Active"
+    # column formatting: name | count | active
+    LABEL=$(printf "%-${MAX_NAME_LEN}s %5s %s" "$NAME" "Names: $COUNT" "$ACTIVE")
+    MENU+=("$i" "$LABEL")
+    ((i++))
+  done
+
+  TOTAL_PROFILES=$(ls "$BOTDIR"/*.db 2>/dev/null | wc -l)
+  LENGTH="$((TOTAL_PROFILES + 7))"
+  # calculate WIDTH dynamically based on longest LABEL
+  WIDTH=$(printf "%s\n" "${MENU[@]}" | awk '{print length($0)}' | sort -nr | head -n1)
+  WIDTH=$((WIDTH + 11))
+
+  # show dialog menu
+  CHOICE=$(dialog --menu "Profiles available: $TOTAL_PROFILES" "$LENGTH" "$WIDTH" 10 "${MENU[@]}" 3>&1 1>&2 2>&3)
+  EXIT_STATUS=$?
+  clear
+
+  # exit immediately on Cancel/ESC
+  if [ $EXIT_STATUS -ne 0 ]; then
+    continue
+  fi
+
+  # get the selected DB path
+  SELECTED_DB=$(ls "$BOTDIR"/*.db | sed -n "${CHOICE}p")
+  SELECTED_NAME=$(basename "$SELECTED_DB")
+
+  # skip if already active
+  if [[ "$SELECTED_DB" != "$ACTIVE_DB" ]]; then
+    # move selected DB to botprofile.db
+    cp "$SELECTED_DB" "${BOTDIR}_2"
+    mv "$SELECTED_DB" "$BOTDIR/botprofile.db"
+  fi
+  dialog --msgbox "Bot profile updated $SELECTED_NAME" 5 50
+}
+
+################################################################################
+# bots
+################################################################################
+
+# copy over extra db if not found
+if [[ ! -f "$BOTDIR"/Realistic_AI.db ]]; then
+  cp "$HOME"/bin/include/extra/bots/Realistic_AI.db "$BOTDIR"
+fi
+
+HEIGHT="10"
+WIDTH="60"
+CHOICE_HEIGHT="3"
+MENU="Bot Options"
+
+OPTIONS=(
+  1 "New Bots       Generate new bot profiles"
+  2 "Names.txt      Manage names for bot generation"
+  3 "Switch DB      Switch active bot profile database"
+)
+
+CHOICE=$(dialog --clear \
+  --menu "$MENU" \
+  $HEIGHT $WIDTH $CHOICE_HEIGHT \
+  "${OPTIONS[@]}" \
+  2>&1 >/dev/tty)
+
+clear
+case $CHOICE in
+"1") srcds_bot_generate ;;  # generate bots
+"2") srcds_bot_names ;;     # names.txt
+"3") srcds_bot_db_switch ;; # switch bot profile
+esac
 
 # END
