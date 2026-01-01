@@ -355,7 +355,7 @@ srcds_mods() {
       MINUTES=0
       SECONDS=0
     fi
-    HLSTATX_STATUS=$(printf "%02dh:%02dm:%02ds" "$HOURS" "$MINUTES" "$SECONDS")
+    HLSTATX_STATUS=$(printf "%02s:%02s:%02s" "$HOURS" "$MINUTES" "$SECONDS")
   else
     HLSTATX_STATUS="Offline"
   fi
