@@ -351,32 +351,39 @@ function srcds_bot_db_edit() {
 ################################################################################
 
 function srcds_bots() {
+  while true; do
+    HEIGHT="12"
+    WIDTH="60"
+    CHOICE_HEIGHT="5"
+    MENU="Bot Options"
 
-  HEIGHT="11"
-  WIDTH="60"
-  CHOICE_HEIGHT="4"
-  MENU="Bot Options"
+    OPTIONS=(
+      1 "New Bots       Generate new bot profiles"
+      2 "Names.txt      Manage names for bot generation"
+      3 "Switch DB      Switch active bot profile database"
+      4 "Edit DB        Edit bot profile (expert)"
+      0 "Back           Return to the tool menu"
+    )
 
-  OPTIONS=(
-    1 "New Bots       Generate new bot profiles"
-    2 "Names.txt      Manage names for bot generation"
-    3 "Switch DB      Switch active bot profile database"
-    4 "Edit DB        Edit bot profile (expert)"
-  )
+    CHOICE=$(dialog --clear \
+      --no-cancel --menu "$MENU" \
+      $HEIGHT $WIDTH $CHOICE_HEIGHT \
+      "${OPTIONS[@]}" \
+      2>&1 >/dev/tty)
 
-  CHOICE=$(dialog --clear \
-    --menu "$MENU" \
-    $HEIGHT $WIDTH $CHOICE_HEIGHT \
-    "${OPTIONS[@]}" \
-    2>&1 >/dev/tty)
+    clear
+    case $CHOICE in
+    "1") srcds_bot_generate ;;  # generate bots
+    "2") srcds_bot_names ;;     # names.txt
+    "3") srcds_bot_db_switch ;; # switch bot profile
+    "4") srcds_bot_db_edit ;;   # edit bot profile
+    "0")
 
-  clear
-  case $CHOICE in
-  "1") srcds_bot_generate ;;  # generate bots
-  "2") srcds_bot_names ;;     # names.txt
-  "3") srcds_bot_db_switch ;; # switch bot profile
-  "4") srcds_bot_db_edit ;;   # edit bot profile
-  esac
+      clear
+      return
+      ;;
+    esac
+  done
 }
 
 # END
