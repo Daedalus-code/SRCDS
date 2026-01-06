@@ -138,23 +138,23 @@ function srcds_fastdl() {
       fi
 
       FASTDL_OUTPUT="FastDL
-├─ Status.....: $FASTDL_STATUS
-├─ URL........: $FASTDL_DWN_URL
-└─ Speed......: $FASTDL_SPEED $AVG_FASTDL_SPEED
+├─ Status......: $FASTDL_STATUS
+├─ URL.........: $FASTDL_DWN_URL
+└─ Speed.......: $FASTDL_SPEED $AVG_FASTDL_SPEED
 
 Maps
-├─ Total......: $NUM_BSP
-├─ Compressed.: $NUM_BSP_BZ2 ($MAPS_COMP_PERC%)
-├─ Space Saved: $MAPS_SAVED_PERC%
-├─ Size Raw...: $MAP_BSP_HUMAN (.bsp)
-└─ Size DL....: $MAP_BZ2_HUMAN (.bz2)
+├─ Total.......: $NUM_BSP
+├─ Compressed..: $NUM_BSP_BZ2 ($MAPS_COMP_PERC%)
+├─ Space Saved.: $MAPS_SAVED_PERC%
+├─ Size Raw....: $MAP_BSP_HUMAN (.bsp)
+└─ Size DL.....: $MAP_BZ2_HUMAN (.bz2)
 
 Sounds
-├─ Total......: $NUM_SOUND
-├─ Compressed.: $NUM_SOUND_BZ2 ($SOUND_COMP_PERC%)
-├─ Space Saved: $SOUND_SAVED_PERC%
-├─ Size Raw...: $SOUND_RAW_HUMAN (.wav/.mp3)
-└─ Size DL....: $SOUND_BZ2_HUMAN (.bz2)"
+├─ Total.......: $NUM_SOUND
+├─ Compressed..: $NUM_SOUND_BZ2 ($SOUND_COMP_PERC%)
+├─ Space Saved.: $SOUND_SAVED_PERC%
+├─ Size Raw....: $SOUND_RAW_HUMAN (.wav/.mp3)
+└─ Size DL.....: $SOUND_BZ2_HUMAN (.bz2)"
 
       dialog --msgbox "$FASTDL_OUTPUT" 0 0
       ;;
@@ -171,8 +171,10 @@ Sounds
       # maps and sound
       MAPS=$(ls "$MAP_DIR"/*.bsp.bz2 2>/dev/null | wc -l)
       SOUND=$(find "$SOUND_DIR" -name "*.bz2" 2>/dev/null | wc -l)
+      OUTPUT="$MAPS maps and $SOUND sound files compressed."
+      WIDTH="$(echo "$(echo "$OUTPUT" | wc -L)+6" | bc 2>/dev/null)"
 
-      dialog --msgbox "$MAPS maps and $SOUND sound files compressed." 6 60
+      dialog --msgbox "$OUTPUT" 5 "$WIDTH"
       ;;
 
       ##########################################################################
@@ -212,8 +214,12 @@ Sounds
 
     "4")
 
-      dialog --title "Maps" --msgbox "$(ls -lSh "$MAP_DIR" 2>/dev/null)" 20 0
-      dialog --title "Sound" --msgbox "$(ls -lSh "$SOUND_DIR" 2>/dev/null)" 20 0
+      dialog --title "Maps" --msgbox "$(ls -lSh "$MAP_DIR"/*.bsp 2>/dev/null)" 0 0
+      dialog --title "Maps compressed" --msgbox "$(ls -lSh "$MAP_DIR"/*.bz2 2>/dev/null)" 0 0
+      SOUND_FILES="$(ls -lSh "$SOUND_DIR" 2>/dev/null)"
+      WIDTH="$(echo "$(echo "$SOUND_FILES" | wc -L)+4" | bc 2>/dev/null)"
+      LENGTH="$(echo "$(echo "$SOUND_FILES" | wc -l)+4" | bc 2>/dev/null)"
+      dialog --title "Sound" --msgbox "$SOUND_FILES" "$LENGTH" "$WIDTH"
       ;;
 
     "0")

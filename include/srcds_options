@@ -25,9 +25,9 @@
 # tools & options
 function srcds_options() {
   while true; do
-    HEIGHT="13"
+    HEIGHT="14"
     WIDTH="54"
-    CHOICE_HEIGHT="6"
+    CHOICE_HEIGHT="7"
     MENU="SRCDS Tools & Options"
 
     OPTIONS=(
@@ -37,20 +37,17 @@ function srcds_options() {
       4 "ncdu             NCurses disk usage viewer"
       5 "FastDL           Faster map downloads"
       6 "Random           Password generator"
+      0 "Back             Return to the tool menu"
     )
 
     CHOICE=$(dialog --clear \
+      --no-cancel \
       --menu "$MENU" \
       $HEIGHT $WIDTH $CHOICE_HEIGHT \
       "${OPTIONS[@]}" \
       3>&1 1>&2 2>&3)
     EXIT_STATUS=$?
     clear
-
-    # exit loop if Cancel/ESC pressed
-    if [ $EXIT_STATUS -ne 0 ]; then
-      return
-    fi
 
     case $CHOICE in
     "1") srcds_bots ;;      # bots
@@ -59,6 +56,7 @@ function srcds_options() {
     "4") ncdu "$HOME" ;;    # ncurses
     "5") srcds_fastdl ;;    # fastdl menu
     "6") random_password ;; # random password generate
+    "0") return ;;
     esac
   done
 }
