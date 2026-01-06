@@ -47,7 +47,7 @@ if [[ ! -f "$HOME/bin/version" ]]; then
   echo "v$LOC_V" >"$HOME/bin/version"
 fi
 
-SCAN_FILE="$HOME/bin/srcds_menu"
+SCAN_FILE="$HOME/bin/srcds"
 VERSION_FILE="$HOME/bin/version"
 
 if [[ -z "$VERSION_FILE" ]]; then
@@ -364,7 +364,7 @@ function srcds_update() {
   cp -r "$HOME"/SRCDS/* "$HOME"/bin
 
   # executable
-  chmod +x "$HOME"/bin/srcds_menu
+  chmod +x "$HOME"/bin/srcds
   chmod +x "$HOME"/bin/include/start_srcds
 
   if [[ "$(grep -c "Updating" /tmp/upd.tmp)" -gt "0" ]]; then
@@ -373,14 +373,14 @@ function srcds_update() {
   fi
 
   # dialog output
-  dialog --msgbox "srcds_menu file updated successfully." 5 41
+  dialog --msgbox "srcds file updated successfully." 5 41
 
   # ensure ~/bin, include exists
   mkdir -p "$HOME/bin"
   mkdir -p "$HOME/bin/include"
   echo "$INSTALL_DIR" >"$HOME"/bin/DIR
   cp -r "$HOME"/SRCDS/* "$HOME"/bin
-  chmod +x "$HOME"/bin/srcds_menu
+  chmod +x "$HOME"/bin/srcds
   clear
   echo "$(date | xargs)" >"$HOME"/bin/updated
   cd && clear && exit
