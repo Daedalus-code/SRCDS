@@ -122,12 +122,20 @@ function srcds_fastdl() {
       ONLINE_CHECK=$(ls "$MAP_DIR"/*.bsp.bz2 2>/dev/null | head -n1 | xargs -n1 basename)
       FASTDL_STATUS="No maps"
       FASTDL_SPEED="N/A"
+      # file age
+      FILE_AGE="$(($(date +%s) - $(stat -c %Y /tmp/fdlsp.tmp)))"
 
       if [[ -n "$ONLINE_CHECK" ]] && curl -fsI "$FASTDL_DWN_URL/maps/$ONLINE_CHECK" >/dev/null; then
         FASTDL_STATUS="OK"
-        FASTDL_SPEED=$(curl -o /dev/null -s -w "%{speed_download}" "$FASTDL_DWN_URL/maps/$ONLINE_CHECK" | awk '{printf "%.1f KB/s",$1/1024}')
-        # track value for average
-        echo "$FASTDL_SPEED" >>/tmp/fdlsp.tmp
+        # if old enough
+        if [[ "$FILE_AGE" -gt "600" ]]; then
+          FASTDL_SPEED=$(curl -o /dev/null -s -w "%{speed_download}" "$FASTDL_DWN_URL/maps/$ONLINE_CHECK" | awk '{printf "%.1f KB/s",$1/1024}')
+          # track value for average
+          echo "$FASTDL_SPEED" >>/tmp/fdlsp.tmp
+        else
+          FASTDL_SPEED="$(tail -1 /tmp/fdlsp.tmp)"
+        fi
+        # average value
         echo "$(tail -10 /tmp/fdlsp.tmp 2>/dev/null)" >/tmp/fdlsp.tmp
         TOT_FASTDL_SPEED="$(awk '{sum += $1} END {print sum}' /tmp/fdlsp.tmp 2>/dev/null)"
         TOT_FASTDL_SPEED_COUNT="$(wc -l /tmp/fdlsp.tmp 2>/dev/null | awk '{ print $1 }')"
