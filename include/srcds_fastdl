@@ -203,7 +203,7 @@ Sounds
       compress_sound
 
       rsync -avz "$MAP_DIR/"*.bsp* "$VPS_USER@$VPS_HOST:$VPS_FASTDL_DIR/maps/"
-      rsync -avz "$SOUND_DIR/"*.bz2 "$VPS_USER@$VPS_HOST:$VPS_FASTDL_DIR/sound/" 2>/dev/null
+      rsync -avz --include='*/' --include='*.bz2' --exclude='*' "$SOUND_DIR/" "$VPS_USER@$VPS_HOST:$VPS_FASTDL_DIR/sound/" 2>/dev/null
 
       dialog --msgbox "Maps and sound synchronized to FastDL server." 5 50
       ;;
