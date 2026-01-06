@@ -69,6 +69,7 @@ if [[ ! -f "$HOME_INSTALL"/bin/srcds ]]; then
   # executable
   chmod +x "$HOME_INSTALL"/bin/srcds
   chmod +x "$HOME_INSTALL"/bin/include/start_srcds
+  chmod +x "$HOME_INSTALL"/bin/include/stop_srcds
   # line version
   LOC_V=$(wc -l <"$HOME_INSTALL"/bin/srcds)
   echo "v$LOC_V" >"$HOME_INSTALL/bin/version"

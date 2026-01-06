@@ -364,6 +364,7 @@ function srcds_update() {
   # executable
   chmod +x "$HOME"/bin/srcds
   chmod +x "$HOME"/bin/include/start_srcds
+  chmod +x "$HOME"/bin/include/stop_srcds
   # dialog output
   dialog --msgbox "srcds file updated successfully." 5 41
   # ensure ~/bin, include exists
