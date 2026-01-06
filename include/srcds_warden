@@ -23,7 +23,13 @@
 ################################################################################
 
 # hlstatsx warden
-if [[ "$(egrep -c "Timeout|stalled|Can't|failed" "$HOME"/HLstatsX/logs/hlstats_* 2>/dev/null | awk -F: '{ print $NF }' | tail -1)" -gt "0" ]]; then
+HLSTATSX_LOGS="$(egrep -c "Timeout|stalled|Can't|failed" "$HOME"/HLstatsX/logs/hlstats_* 2>/dev/null | awk -F: '{ print $NF }' 2>/dev/null | tail -1 2>/dev/null)"
+# if zero
+if [[ -z "$HLSTATSX_LOGS" ]]; then
+  HLSTATSX_LOGS="0"
+fi
+# if any issues
+if [[ "$HLSTATSX_LOGS" -gt "0" ]]; then
   # log output
   echo "-- Timeouts, Stalled, Fails detected..! @ $(date | xargs)" >>"$HOME"/bin/include/cron.log
   echo "++ Restarting hlstatsx daemon..!" >>"$HOME"/bin/include/cron.log
