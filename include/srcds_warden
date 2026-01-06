@@ -29,6 +29,8 @@ if [[ "$(egrep -c "Timeout|stalled|Can't|failed" "$HOME"/HLstatsX/logs/hlstats_*
   echo "SRCDS: timeouts, stalled, fails detected..!" >>"$HOME"/HLstatsX/logs/"$HLSTATSX_LOG_NAME"
   # log output
   echo "SRCDS: restarting hlstatsx daemon..!" >>"$HOME"/HLstatsX/logs/"$HLSTATSX_LOG_NAME"
+  # keep old logs
+  cat "$HOME"/HLstatsX/logs/hlstats_* | awk 'seen[$0]++' >>"$HOME"/HLstatsX/logs/hlstats_old
   # stop stats
   cd "$HLSTATSX_DIR" && ./run_hlstats restart &>/dev/null
 fi
