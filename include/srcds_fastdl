@@ -214,12 +214,9 @@ Sounds
 
     "4")
 
-      dialog --title "Maps" --msgbox "$(ls -lSh "$MAP_DIR"/*.bsp 2>/dev/null)" 0 0
-      dialog --title "Maps compressed" --msgbox "$(ls -lSh "$MAP_DIR"/*.bz2 2>/dev/null)" 0 0
-      SOUND_FILES="$(ls -lSh "$SOUND_DIR" 2>/dev/null)"
-      WIDTH="$(echo "$(echo "$SOUND_FILES" | wc -L)+4" | bc 2>/dev/null)"
-      LENGTH="$(echo "$(echo "$SOUND_FILES" | wc -l)+4" | bc 2>/dev/null)"
-      dialog --title "Sound" --msgbox "$SOUND_FILES" "$LENGTH" "$WIDTH"
+      # change directory
+      ncdu "$MAP_DIR"
+      ncdu "$SOUND_DIR"
       ;;
 
     "0")

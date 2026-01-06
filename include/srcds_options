@@ -34,7 +34,7 @@ function srcds_options() {
       1 "Bots             Bot management options"
       2 "Data Usage       Monitor network data"
       3 "crontab          Manage scheduled tasks"
-      4 "ncdu             NCurses disk usage viewer"
+      4 "Files            NCDU Disk usage"
       5 "FastDL           Faster map downloads"
       6 "Random           Password generator"
       0 "Back             Return to the tool menu"
