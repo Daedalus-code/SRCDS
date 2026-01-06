@@ -26,21 +26,16 @@ source "$HOME/bin/include/srcds.conf"
 
 ################################################################################
 
-# if zero
-if [[ ! -z "$SRCDS_PID" ]]; then
-  dialog --yesno "Stop server and daemon?" 5 29
-  [[ ! $? == 0 ]] && return 1
-  # stop stats
-  cd "$HLSTATSX_DIR" && ./run_hlstats stop &>/dev/null
-  # stop server
-  screen -X -S srcds_screen quit &>/dev/null
-  if [[ "$SRCDS_PID" -gt "0" ]]; then
-    kill -9 "$SRCDS_PID" &>/dev/null
-  fi
-  WIDTH="$(echo "$(echo "Stopped SRCDS and HLstatsX ($SRCDS_PID/$SCREEN_PID)" | wc -L)+4" | bc 2>/dev/null)"
-  dialog --msgbox "Stopped SRCDS and HLstatsX ($SRCDS_PID/$SCREEN_PID)" 5 "$WIDTH"
-else
-  dialog --msgbox "Server is not running!" 5 28
+dialog --yesno "Stop server and daemon?" 5 29
+[[ ! $? == 0 ]] && return 1
+# stop stats
+cd "$HLSTATSX_DIR" && ./run_hlstats stop &>/dev/null
+# stop server
+screen -X -S srcds_screen quit &>/dev/null
+if [[ "$SRCDS_PID" -gt "0" ]]; then
+  kill -9 "$SRCDS_PID" &>/dev/null
 fi
+WIDTH="$(echo "$(echo "Stopped SRCDS and HLstatsX ($SRCDS_PID/$SCREEN_PID)" | wc -L)+4" | bc 2>/dev/null)"
+dialog --msgbox "Stopped SRCDS and HLstatsX ($SRCDS_PID/$SCREEN_PID)" 5 "$WIDTH"
 
 # END
