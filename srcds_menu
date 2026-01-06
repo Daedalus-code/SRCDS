@@ -358,13 +358,19 @@ function srcds_update() {
   fi
 
   echo "Update SRCDS"
-  cd "$INSTALL_DIR" && git pull https://github.com/Daedalus-code/SRCDS.git
+  cd "$INSTALL_DIR" && git pull https://github.com/Daedalus-code/SRCDS.git >/tmp/upd.tmp
+  cat /tmp/upd.tmp
   sleep 1
   cp -r "$HOME"/SRCDS/* "$HOME"/bin
 
   # executable
   chmod +x "$HOME"/bin/srcds_menu
   chmod +x "$HOME"/bin/include/start_srcds
+
+  if [[ "$(grep -c "Updating" /tmp/upd.tmp)" -gt "0" ]]; then
+    echo
+    read -r -p "Press Enter to continue" </dev/tty
+  fi
 
   # dialog output
   dialog --msgbox "srcds_menu file updated successfully." 5 41
