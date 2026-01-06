@@ -2,9 +2,6 @@
 
 ################################################################################
 #
-# SRCDS Tools & Options
-# Author: Daedalus-code
-#
 # License: GNU General Public License v3.0
 #
 # This program is free software: you can redistribute it and/or modify
@@ -24,21 +21,37 @@
 
 function srcds_fastdl() {
 
-  # local map directory
   MAP_DIR="$SRCDS_DIR/$SERVER_GAME/maps"
+  SOUND_DIR="$SRCDS_DIR/$SERVER_GAME/sound"
 
-  function compress_maps() {
-    find "$MAP_DIR" -name "*.bsp" -exec sh -c '[ ! -f "$1.bz2" ] && bzip2 -k -1 "$1"' sh {} \;
+  # compress maps
+  compress_maps() {
+    find "$MAP_DIR" -name "*.bsp" \
+      -exec sh -c '[ ! -f "$1.bz2" ] && bzip2 -k -1 "$1"' sh {} \;
+  }
+  # compress sound
+  compress_sound() {
+    find "$SOUND_DIR" \( -name "*.wav" -o -name "*.mp3" \) \
+      -exec sh -c '[ ! -f "$1.bz2" ] && bzip2 -k -1 "$1"' sh {} \;
+  }
+
+  human_size() {
+    awk -v size="$1" 'BEGIN{
+      if (size < 1024) printf "%d B", size
+      else if (size < 1048576) printf "%.1f KB", size/1024
+      else if (size < 1073741824) printf "%.1f MB", size/1048576
+      else printf "%.1f GB", size/1073741824
+    }'
   }
 
   while true; do
     ACTION=$(
       dialog --no-cancel --clear --title "FastDL Menu" \
-        --menu "" 11 61 6 \
+        --menu "" 11 61 5 \
         1 "Status           Display FastDL overview" \
-        2 "Compress         Compress .bsp map files" \
+        2 "Compress         Compress maps & sound" \
         3 "Synchronize      Synchronize files (SSH required)" \
-        4 "Mapfiles         Display maps for the VPS" \
+        4 "Files            Display FastDL files" \
         0 "Back             Return to the tool menu" \
         3>&1 1>&2 2>&3
     )
@@ -51,50 +64,99 @@ function srcds_fastdl() {
 
     "1")
 
-      # fastDL status check
+      # maps
       NUM_BSP=$(ls "$MAP_DIR"/*.bsp 2>/dev/null | wc -l)
-      NUM_COMPRESSED=$(ls "$MAP_DIR"/*.bsp.bz2 2>/dev/null | wc -l)
+      NUM_BSP_BZ2=$(ls "$MAP_DIR"/*.bsp.bz2 2>/dev/null | wc -l)
+      # sound
+      NUM_SOUND=$(find "$SOUND_DIR" \( -name "*.wav" -o -name "*.mp3" \) 2>/dev/null | wc -l)
+      NUM_SOUND_BZ2=$(find "$SOUND_DIR" \( -name "*.wav.bz2" -o -name "*.mp3.bz2" \) 2>/dev/null | wc -l)
 
-      TOTAL_BSP_BYTES=$(find "$MAP_DIR" -type f -name "*.bsp" -exec stat -c%s {} \; | awk '{sum+=$1} END {print sum}')
-      TOTAL_BSP_HUMAN=$(awk -v size="$TOTAL_BSP_BYTES" 'BEGIN{if(size<1024){print size " B"} else if(size<1048576){printf "%.1f KB", size/1024} else if(size<1073741824){printf "%.1f MB", size/1048576} else {printf "%.1f GB", size/1073741824}}')
-      TOTAL_BZ2_BYTES=$(find "$MAP_DIR" -type f -name "*.bsp.bz2" -exec stat -c%s {} \; | awk '{sum+=$1} END {print sum}')
-      TOTAL_BZ2_HUMAN=$(awk -v size="$TOTAL_BZ2_BYTES" 'BEGIN{if(size<1024){print size " B"} else if(size<1048576){printf "%.1f KB", size/1024} else if(size<1073741824){printf "%.1f MB", size/1048576} else {printf "%.1f GB", size/1073741824}}')
+      # compressed maps percentage
+      if ((NUM_BSP > 0)); then
+        MAPS_COMP_PERC=$(awk -v c="$NUM_BSP_BZ2" -v t="$NUM_BSP" 'BEGIN{printf "%.0f", (c/t)*100}')
+      else
+        MAPS_COMP_PERC=0
+      fi
+      # compressed sound percentage
+      if ((NUM_SOUND > 0)); then
+        SOUND_COMP_PERC=$(awk -v c="$NUM_SOUND_BZ2" -v t="$NUM_SOUND" 'BEGIN{printf "%.0f", (c/t)*100}')
+      else
+        SOUND_COMP_PERC=0
+      fi
 
+      # maps bytes
+      TOTAL_BSP_BYTES=$(find "$MAP_DIR" -name "*.bsp" -exec stat -c%s {} \; | awk '{s+=$1} END{print s}')
+      TOTAL_BZ2_BYTES=$(find "$MAP_DIR" -name "*.bsp.bz2" -exec stat -c%s {} \; | awk '{s+=$1} END{print s}')
+      # sound bytes
+      TOTAL_SOUND_BYTES=$(find "$SOUND_DIR" \( -name "*.wav" -o -name "*.mp3" \) -exec stat -c%s {} \; | awk '{s+=$1} END{print s}')
+      TOTAL_SOUND_BZ2_BYTES=$(find "$SOUND_DIR" \( -name "*.wav.bz2" -o -name "*.mp3.bz2" \) -exec stat -c%s {} \; | awk '{s+=$1} END{print s}')
+
+      # fastdl url
       FASTDL_DWN_URL=$(grep -m1 "sv_downloadurl" "$SRCDS_DIR/$SERVER_GAME/cfg/server.cfg" | awk '{print $NF}' | tr -d '"')
+
+      # map sizes
+      MAP_BSP_HUMAN=$(human_size "$TOTAL_BSP_BYTES")
+      MAP_BZ2_HUMAN=$(human_size "$TOTAL_BZ2_BYTES")
+      # sound sizes
+      SOUND_RAW_HUMAN=$(human_size "$TOTAL_SOUND_BYTES")
+      SOUND_BZ2_HUMAN=$(human_size "$TOTAL_SOUND_BZ2_BYTES")
+
+      # maps space saved
+      if ((TOTAL_BSP_BYTES > 0)); then
+        MAPS_SAVED_PERC=$(awk -v r="$TOTAL_BSP_BYTES" -v c="$TOTAL_BZ2_BYTES" \
+          'BEGIN{printf "%.0f", ((r-c)/r)*100}')
+      else
+        MAPS_SAVED_PERC=0
+      fi
+      # sound space saved
+      if ((TOTAL_SOUND_BYTES > 0)); then
+        SOUND_SAVED_PERC=$(awk -v r="$TOTAL_SOUND_BYTES" -v c="$TOTAL_SOUND_BZ2_BYTES" \
+          'BEGIN{printf "%.0f", ((r-c)/r)*100}')
+      else
+        SOUND_SAVED_PERC=0
+      fi
 
       [[ "$FASTDL_DWN_URL" != */ ]] && FASTDL_DWN_URL="$FASTDL_DWN_URL/"
 
-      ONLINE_MAP_CHECK=$(ls "$MAP_DIR"/*.bsp.bz2 2>/dev/null | head -n1 | xargs -n1 basename)
-
+      # online check
+      ONLINE_CHECK=$(ls "$MAP_DIR"/*.bsp.bz2 2>/dev/null | head -n1 | xargs -n1 basename)
       FASTDL_STATUS="No maps"
       FASTDL_SPEED="N/A"
 
-      if [[ -n "$ONLINE_MAP_CHECK" ]]; then
-        if curl -fsI "$FASTDL_DWN_URL/maps/$ONLINE_MAP_CHECK" >/dev/null; then
-          FASTDL_STATUS="OK"
-          FASTDL_SPEED=$(curl -o /dev/null -s -w "%{speed_download}" "$FASTDL_DWN_URL/maps/$ONLINE_MAP_CHECK" | awk '{printf "%.1f KB/s", $1/1024}')
-          # track value for average
-          echo "$FASTDL_SPEED" >>/tmp/fdlsp.tmp
-          echo "$(tail -10 /tmp/fdlsp.tmp 2>/dev/null)" >/tmp/fdlsp.tmp
-          TOT_FASTDL_SPEED="$(awk '{sum += $1} END {print sum}' /tmp/fdlsp.tmp 2>/dev/null)"
-          TOT_FASTDL_SPEED_COUNT="$(wc -l /tmp/fdlsp.tmp 2>/dev/null | awk '{ print $1 }')"
-          AVG_FASTDL_SPEED="Average: $(echo "$TOT_FASTDL_SPEED/$TOT_FASTDL_SPEED_COUNT" | bc 2>/dev/null) KB/s"
-        else
-          FASTDL_STATUS="Offline, no maps on server!"
-          AVG_FASTDL_SPEED=""
-        fi
+      if [[ -n "$ONLINE_CHECK" ]] && curl -fsI "$FASTDL_DWN_URL/maps/$ONLINE_CHECK" >/dev/null; then
+        FASTDL_STATUS="OK"
+        FASTDL_SPEED=$(curl -o /dev/null -s -w "%{speed_download}" "$FASTDL_DWN_URL/maps/$ONLINE_CHECK" | awk '{printf "%.1f KB/s",$1/1024}')
+        # track value for average
+        echo "$FASTDL_SPEED" >>/tmp/fdlsp.tmp
+        echo "$(tail -10 /tmp/fdlsp.tmp 2>/dev/null)" >/tmp/fdlsp.tmp
+        TOT_FASTDL_SPEED="$(awk '{sum += $1} END {print sum}' /tmp/fdlsp.tmp 2>/dev/null)"
+        TOT_FASTDL_SPEED_COUNT="$(wc -l /tmp/fdlsp.tmp 2>/dev/null | awk '{ print $1 }')"
+        AVG_FASTDL_SPEED="Average: $(echo "$TOT_FASTDL_SPEED/$TOT_FASTDL_SPEED_COUNT" | bc 2>/dev/null) KB/s"
+      else
+        FASTDL_STATUS="Offline, no maps on server!"
+        AVG_FASTDL_SPEED=""
       fi
 
-      # dialog output
-      FASTDL_MAPS="$NUM_COMPRESSED (.bsp.bz2)"
-      FASTDL_SIZE="$TOTAL_BZ2_HUMAN (.bsp.bz2) / $TOTAL_BSP_HUMAN (.bsp)"
-      FASTDL_OUTPUT="FastDL Status.: $FASTDL_STATUS
-FastDL URL....: $FASTDL_DWN_URL
-Down Speed....: $FASTDL_SPEED $AVG_FASTDL_SPEED
-Server Maps...: $FASTDL_MAPS
-Total Size....: $FASTDL_SIZE"
-      WIDTH=$(($(echo "$FASTDL_OUTPUT" | wc -L) + 5))
-      dialog --msgbox "$FASTDL_OUTPUT" 9 "$WIDTH"
+      FASTDL_OUTPUT="FastDL
+├─ Status.....: $FASTDL_STATUS
+├─ URL........: $FASTDL_DWN_URL
+└─ Speed......: $FASTDL_SPEED $AVG_FASTDL_SPEED
+
+Maps
+├─ Total......: $NUM_BSP
+├─ Compressed.: $NUM_BSP_BZ2 ($MAPS_COMP_PERC%)
+├─ Space Saved: $MAPS_SAVED_PERC%
+├─ Size Raw...: $MAP_BSP_HUMAN (.bsp)
+└─ Size DL....: $MAP_BZ2_HUMAN (.bz2)
+
+Sounds
+├─ Total......: $NUM_SOUND
+├─ Compressed.: $NUM_SOUND_BZ2 ($SOUND_COMP_PERC%)
+├─ Space Saved: $SOUND_SAVED_PERC%
+├─ Size Raw...: $SOUND_RAW_HUMAN (.wav/.mp3)
+└─ Size DL....: $SOUND_BZ2_HUMAN (.bz2)"
+
+      dialog --msgbox "$FASTDL_OUTPUT" 0 0
       ;;
 
       ##########################################################################
@@ -104,10 +166,13 @@ Total Size....: $FASTDL_SIZE"
     "2")
 
       compress_maps
-      NUM_COMPRESSED=$(ls "$MAP_DIR"/*.bsp.bz2 2>/dev/null | wc -l)
-      FASTDL_COM_OUTPUT="$NUM_COMPRESSED maps are now compressed (.bsp.bz2)"
-      WIDTH="$(echo "$(echo "$FASTDL_COM_OUTPUT" | wc -L)+5" | bc 2>/dev/null)"
-      dialog --msgbox "$NUM_COMPRESSED maps are now compressed (.bsp.bz2)" 5 "$WIDTH"
+      compress_sound
+
+      # maps and sound
+      MAPS=$(ls "$MAP_DIR"/*.bsp.bz2 2>/dev/null | wc -l)
+      SOUND=$(find "$SOUND_DIR" -name "*.bz2" 2>/dev/null | wc -l)
+
+      dialog --msgbox "$MAPS maps and $SOUND sound files compressed." 6 60
       ;;
 
       ##########################################################################
@@ -116,40 +181,39 @@ Total Size....: $FASTDL_SIZE"
 
     "3")
 
-      # upload maps (rsync)
-      VPS_USER=$(dialog --inputbox "Enter VPS SSH username:" 8 40 3>&1 1>&2 2>&3 3>&1)
-      VPS_HOST=$(dialog --inputbox "Enter VPS hostname or IP:" 8 40 3>&1 1>&2 2>&3 3>&1)
-      # default expected directory path
-      VPS_FASTDL_DEFAULT="/var/www/html/cstrike"
-      VPS_FASTDL_DIR=$(dialog --inputbox "Enter VPS FastDL directory (e.g., /var/www/html/cstrike):" 8 50 "$VPS_FASTDL_DEFAULT" 3>&1 1>&2 2>&3 3>&1)
+      # default
+      VPS_USER_CACHE=""
 
-      clear
-      # compress maps before sync
+      # if found
+      if [[ -f /tmp/sshvps.tmp ]]; then
+        # vps user cache
+        VPS_USER_CACHE="$(cat /tmp/sshvps.tmp 2>/dev/null)"
+      fi
+
+      VPS_USER=$(dialog --inputbox "Enter VPS SSH username:" 8 40 "$VPS_USER_CACHE" 3>&1 1>&2 2>&3)
+      # keep vps user cache
+      echo "$VPS_USER" >/tmp/sshvps.tmp
+
+      VPS_HOST=$(dialog --inputbox "Enter VPS hostname or IP:" 8 40 3>&1 1>&2 2>&3)
+      VPS_FASTDL_DIR=$(dialog --inputbox "FastDL directory:" 8 50 "/var/www/html/cstrike" 3>&1 1>&2 2>&3)
+
       compress_maps
-      # synchronize maps to vps server
-      rsync -avz "$MAP_DIR/"*.bsp "$VPS_USER@$VPS_HOST:$VPS_FASTDL_DIR/maps/"
-      rsync -avz "$MAP_DIR/"*.bsp.bz2 "$VPS_USER@$VPS_HOST:$VPS_FASTDL_DIR/maps/"
+      compress_sound
 
-      FASTDL_UP_OUTPUT="$FASTDL_MAPS Maps synchronized to FastDL VPS."
-      WIDTH="$(echo "$(echo "$FASTDL_UP_OUTPUT" | wc -L)+5" | bc 2>/dev/null)"
-      dialog --msgbox "$FASTDL_UP_OUTPUT" 5 "$WIDTH"
+      rsync -avz "$MAP_DIR/"*.bsp* "$VPS_USER@$VPS_HOST:$VPS_FASTDL_DIR/maps/"
+      rsync -avz "$SOUND_DIR/"*.bz2 "$VPS_USER@$VPS_HOST:$VPS_FASTDL_DIR/sound/" 2>/dev/null
+
+      dialog --msgbox "Maps and sound synchronized to FastDL server." 5 50
       ;;
 
       ##########################################################################
-      # list maps
+      # list maps and sound
       ##########################################################################
 
     "4")
 
-      # bsp
-      LIST_BSP_MAPS="$(ls -lSh "$MAP_DIR/"*.bsp 2>/dev/null)"
-      LIST_BSP_COUNT="$(echo "$LIST_BSP_MAPS" | grep -v "total" 2>/dev/null | wc -l)"
-      # bos.bz2
-      LIST_BZ2_MAPS="$(ls -lSh "$MAP_DIR/"*.bsp.bz2 2>/dev/null)"
-      LIST_BZ2_COUNT="$(echo "$LIST_BZ2_MAPS" | grep -v "total" 2>/dev/null | wc -l)"
-
-      dialog --title "Maps (.bsp): $LIST_BSP_COUNT" --msgbox "$LIST_BSP_MAPS" 20 0
-      dialog --title "Maps (.bsp.bz2): $LIST_BZ2_COUNT" --msgbox "$LIST_BZ2_MAPS" 20 0
+      dialog --title "Maps" --msgbox "$(ls -lSh "$MAP_DIR" 2>/dev/null)" 20 0
+      dialog --title "Sound" --msgbox "$(ls -lSh "$SOUND_DIR" 2>/dev/null)" 20 0
       ;;
 
     "0")
