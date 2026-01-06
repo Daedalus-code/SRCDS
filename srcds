@@ -380,7 +380,6 @@ function srcds_update() {
   mkdir -p "$HOME/bin/include"
   echo "$INSTALL_DIR" >"$HOME"/bin/DIR
   cp -r "$HOME"/SRCDS/* "$HOME"/bin
-  chmod +x "$HOME"/bin/srcds
   clear
   echo "$(date | xargs)" >"$HOME"/bin/updated
   cd && clear && exit
