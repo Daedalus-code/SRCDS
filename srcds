@@ -43,7 +43,7 @@ source "$HOME/bin/include/random_password"
 # not found
 if [[ ! -f "$HOME/bin/version" ]]; then
   # update version file
-  LOC_V=$(wc -l $HOME/bin/*_* "$HOME"/bin/include/*_* 2>/dev/null | grep "total" | awk '{ print $1 }')
+  LOC_V=$(wc -l "$HOME"/bin/srcds "$HOME"/bin/include/*_* 2>/dev/null | grep "total" | awk '{ print $1 }')
   echo "v$LOC_V" >"$HOME/bin/version"
 fi
 
