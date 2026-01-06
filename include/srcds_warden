@@ -37,6 +37,4 @@ if [[ "$(egrep -c "Timeout|stalled|Can't|failed" "$HOME"/HLstatsX/logs/hlstats_*
   cd "$HLSTATSX_DIR" && ./run_hlstats restart &>/dev/null
 fi
 
-################################################################################
-
 # END
