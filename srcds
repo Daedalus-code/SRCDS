@@ -31,6 +31,7 @@ source "$HOME/bin/include/srcds_bots"
 source "$HOME/bin/include/data_usage"
 source "$HOME/bin/include/srcds_mods"
 source "$HOME/bin/include/system_info"
+source "$HOME/bin/include/srcds_update"
 source "$HOME/bin/include/srcds_fastdl"
 source "$HOME/bin/include/srcds_crontab"
 source "$HOME/bin/include/srcds_options"
@@ -337,44 +338,6 @@ function srcds_logs() {
     rm "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* &>/dev/null
     ;;
   esac
-}
-
-################################################################################
-# srcds update
-################################################################################
-
-function srcds_update() {
-  # remove old version file
-  rm "$HOME/bin/version"
-  # if missing, empty
-  if [[ ! -f "$HOME/bin/DIR" || -z $(grep -v '^[[:space:]]*$' "$HOME/bin/DIR") ]]; then
-    echo "File missing or empty/blank.."
-    sleep 1
-    echo "Finding SRCDS repo.."
-    INSTALL_DIR="$(find / -name "SRCDS" 2>/dev/null)"
-    echo "Creating new file.."
-  else
-    INSTALL_DIR="$(cat "$HOME"/bin/DIR 2>/dev/null)"
-  fi
-
-  echo "Update SRCDS"
-  cd "$INSTALL_DIR" && git pull https://github.com/Daedalus-code/SRCDS.git
-  sleep 1
-  cp -r "$HOME"/SRCDS/* "$HOME"/bin
-  # executable
-  chmod +x "$HOME"/bin/srcds
-  chmod +x "$HOME"/bin/include/start_srcds
-  chmod +x "$HOME"/bin/include/stop_srcds
-  # dialog output
-  dialog --msgbox "srcds file updated successfully." 5 36
-  # ensure ~/bin, include exists
-  mkdir -p "$HOME/bin"
-  mkdir -p "$HOME/bin/include"
-  echo "$INSTALL_DIR" >"$HOME"/bin/DIR
-  cp -r "$HOME"/SRCDS/* "$HOME"/bin
-  clear
-  echo "$(date | xargs)" >"$HOME"/bin/updated
-  cd && clear && exit
 }
 
 ################################################################################

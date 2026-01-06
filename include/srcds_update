@@ -1,0 +1,59 @@
+#!/bin/bash
+
+################################################################################
+#
+# SRCDS Tools & Options
+# Author: Daedalus-code
+#
+# License: GNU General Public License v3.0
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this script. If not, see <https://www.gnu.org/licenses/>.
+#
+################################################################################
+
+function srcds_update() {
+  # remove old version file
+  rm "$HOME/bin/version"
+  # if missing, empty
+  if [[ ! -f "$HOME/bin/DIR" || -z $(grep -v '^[[:space:]]*$' "$HOME/bin/DIR") ]]; then
+    echo "File missing or empty/blank.."
+    sleep 1
+    echo "Finding SRCDS repo.."
+    INSTALL_DIR="$(find / -name "SRCDS" 2>/dev/null)"
+    echo "Creating new file.."
+  else
+    INSTALL_DIR="$(cat "$HOME"/bin/DIR 2>/dev/null)"
+  fi
+
+  echo "Update SRCDS"
+  cd "$INSTALL_DIR" && git pull https://github.com/Daedalus-code/SRCDS.git
+  sleep 1
+  cp -r "$HOME"/SRCDS/* "$HOME"/bin
+  # executable
+  chmod +x "$HOME"/bin/srcds
+  chmod +x "$HOME"/bin/include/start_srcds
+  chmod +x "$HOME"/bin/include/stop_srcds
+  # dialog output
+  dialog --msgbox "srcds file updated successfully." 5 36
+  # ensure ~/bin, include exists
+  mkdir -p "$HOME/bin"
+  mkdir -p "$HOME/bin/include"
+  echo "$INSTALL_DIR" >"$HOME"/bin/DIR
+  cp -r "$HOME"/SRCDS/* "$HOME"/bin
+  clear
+  echo "$(date | xargs)" >"$HOME"/bin/updated
+  cd && clear && exit
+}
+
+# END
