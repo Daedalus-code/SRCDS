@@ -26,7 +26,7 @@
 function srcds_options() {
   while true; do
     HEIGHT="14"
-    WIDTH="53"
+    WIDTH="52"
     CHOICE_HEIGHT="7"
     MENU="SRCDS Tools & Options"
 
