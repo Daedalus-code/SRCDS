@@ -386,6 +386,8 @@ if [[ -z "$ACTIVE_MAP" ]]; then
 fi
 if [[ -z "$ACTIVE_WAN" ]]; then
   ACTIVE_WAN="Offline"
+else
+  ACTIVE_WAN="${ACTIVE_WAN}:${SERVER_PORT}"
 fi
 
 SCREEN_LOG="$HLSTATSX_DIR/screenlog.0"
@@ -444,7 +446,7 @@ HEIGHT="24"
 CHOICE_HEIGHT="10"
 BACKTITLE="SRCDS Menu $SCRIPT_VERSION"
 MENU="Host.....: $ACTIVE_HOSTNAME
-Address..: ${ACTIVE_WAN:?}:$SERVER_PORT
+Address..: ${ACTIVE_WAN:?}
 Map......: $ACTIVE_MAP
 Players..: ${ACTIVE_IRL_AMOUNT:-0}/${ACTIVE_BOT_AMOUNT:-0}/${ACTIVE_MAX_AMOUNT:-0}
 CPU......: ${LOAD_PCT}% ${CPU_TEMP}°C
