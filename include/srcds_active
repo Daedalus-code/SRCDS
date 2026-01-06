@@ -1,0 +1,179 @@
+#!/bin/bash
+
+################################################################################
+#
+# SRCDS Tools & Options
+# Author: Daedalus-code
+#
+# License: GNU General Public License v3.0
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this script. If not, see <https://www.gnu.org/licenses/>.
+#
+################################################################################
+
+function srcds_active() {
+
+  if ! screen -list 2>/dev/null | grep -q '\.srcds_screen'; then
+    dialog --msgbox "Server not running!" 5 24
+    return 1
+  fi
+
+  update_active
+
+  TMPFILE="/tmp/usrid.tmp"
+
+  [[ ! -f "$TMPFILE" ]] && {
+    dialog --msgbox "Player file not found:\n$TMPFILE" 8 50
+    return 1
+  }
+
+  # fetch mysql credentials from hlstats.conf
+  DB_HOST="$(grep DBHost "$HLSTATSX_DIR"/hlstats.conf | grep -v "#" | awk '{print $NF}' | tr -d '"' | awk -F: '{print $1}')"
+  DB_USER="$(grep DBUsername "$HLSTATSX_DIR"/hlstats.conf | grep -v "#" | awk '{print $NF}' | tr -d '"')"
+  DB_PASS="$(grep DBPassword "$HLSTATSX_DIR"/hlstats.conf | grep -v "#" | awk '{print $NF}' | tr -d '"')"
+  DB_NAME="$(grep DBName "$HLSTATSX_DIR"/hlstats.conf | grep -v "#" | awk '{print $NF}' | tr -d '"')"
+
+  MENU_ITEMS=()
+  COUNTER=1
+
+  while read -r LINE; do
+    [[ "$LINE" =~ userid ]] && continue # skip header
+    [[ -z "$LINE" ]] && continue        # skip empty lines
+    [[ "$LINE" =~ ^# ]] && continue     # skip commented lines
+
+    # use counter as menu number, full line as menu text
+    MENU_ITEMS+=("  $COUNTER" "$LINE")
+    ((COUNTER++))
+  done <"$TMPFILE"
+
+  ITEM_COUNT=$((${#MENU_ITEMS[@]} / 2))
+  [[ "$ITEM_COUNT" -eq 0 ]] && {
+    dialog --msgbox "No players found." 5 24
+    return 1
+  }
+
+  HEIGHT=$((ITEM_COUNT + 6))
+
+  MAX_WIDTH=0
+  for ((i = 1; i < ${#MENU_ITEMS[@]}; i += 2)); do
+    ((${#MENU_ITEMS[i]} > MAX_WIDTH)) && MAX_WIDTH=${#MENU_ITEMS[i]}
+  done
+
+  WIDTH=$((MAX_WIDTH + 11))
+
+  MENU_HEIGHT=$ITEM_COUNT
+  ((MENU_HEIGHT > 6)) && MENU_HEIGHT="6"
+
+  SELECTED=$(dialog --title "Players: ${ACTIVE_IRL_AMOUNT:-0} Bots: ${ACTIVE_BOT_AMOUNT:-0} Max: ${ACTIVE_MAX_AMOUNT:-0}" \
+    --menu "" \
+    "$HEIGHT" "$WIDTH" "$MENU_HEIGHT" \
+    "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3)
+
+  [[ -z "$SELECTED" ]] && return 1
+
+  # get selected line text
+  PLAYER_ROW=""
+  index=$(((SELECTED - 1) * 2 + 1))
+  PLAYER_ROW="${MENU_ITEMS[index]}"
+
+  # extract player name (first quoted string)
+  PLAYER_NAME=$(awk -F'"' '{print $2}' <<<"$PLAYER_ROW")
+
+  RESULT=$(
+    mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" \
+      --batch --raw --silent \
+      --execute "
+  SELECT CONCAT_WS('|',
+    p.lastName,
+    p.skill,
+    p.kills,
+    p.deaths,
+    ROUND(p.connection_time / 60),
+    IFNULL(p.lastAddress,''),
+    IFNULL(p.country,''),
+    IFNULL(p.flag,''),
+    IFNULL(p.activity,''),
+    IFNULL(p.last_skill_change,''),
+    IFNULL(p.kill_streak,''),
+    IFNULL(p.death_streak,''),
+    ROUND(p.kills / IF(p.deaths = 0, 1, p.deaths), 2),
+    (SELECT COUNT(*) + 1 FROM hlstats_Players WHERE skill > p.skill AND hideranking=0)
+  )
+  FROM hlstats_Players p
+  WHERE p.lastName = REPLACE('$PLAYER_NAME','|','')
+  LIMIT 1;
+  " 2>/dev/null
+  )
+
+  # HARD guarantee correct mapping
+  IFS='|' read -r \
+    NAME SKILL KILLS DEATHS CONNECTION ADDRESS COUNTRY FLAG ACTIVITY SKILL_CHANGE KILL_STREAK DEATH_STREAK KPD RANK \
+    <<<"$RESULT"
+
+  if [[ -z "$COUNTRY" ]]; then
+    COUNTRY="none"
+  fi
+
+  if [[ "$ADDRESS" == "127.0.0.1" ]]; then
+    ADDRESS="Bot"
+  fi
+
+  if [ -z "$RESULT" ]; then
+    dialog --msgbox "No HLstatsX data found for:\n$PLAYER_NAME" 0 0
+    return 1
+  fi
+
+  # if positive
+  if [[ "$(echo "$SKILL_CHANGE" | grep -c "-")" -eq "0" ]]; then
+    SKILL_CHANGE="+$SKILL_CHANGE"
+  fi
+
+  LINES=(
+    "                  "
+    "  Player.......: $NAME"
+    "  Activity.....: $ACTIVITY %"
+    "  Time.........: $CONNECTION min"
+    "  Address......: $ADDRESS"
+    "  Country......: $COUNTRY ($FLAG)"
+    ""
+    "  Kills........: $KILLS"
+    "  Deaths.......: $DEATHS"
+    "  K/D..........: $KPD"
+    "  Kill_Streak..: $KILL_STREAK"
+    "  Death_Streak.: $DEATH_STREAK"
+    ""
+    "  Rank.........: $RANK"
+    "  Skill........: $SKILL"
+    "  Skill_Change.: $SKILL_CHANGE"
+  )
+
+  MAX_WIDTH=0
+  for LINE in "${LINES[@]}"; do
+    len=${#LINE}
+    ((len > MAX_WIDTH)) && MAX_WIDTH=$len
+  done
+
+  WIDTH=$((MAX_WIDTH + 7))     # add a little padding
+  HEIGHT=$((${#LINES[@]} + 5)) # 2 extra lines for top/bottom
+
+  MSG=""
+  for LINE in "${LINES[@]}"; do
+    MSG+="$LINE\n"
+  done
+
+  dialog --title "  Player info" --no-collapse --msgbox "$MSG" "$HEIGHT" "$WIDTH"
+  srcds_active
+}
+
+# END
