@@ -24,11 +24,9 @@
 
 # hlstatsx warden
 if [[ "$(egrep -c "Timeout|stalled|Can't|failed" "$HOME"/HLstatsX/logs/hlstats_* 2>/dev/null | awk -F: '{ print $NF }' | tail -1)" -gt "0" ]]; then
-  HLSTATSX_LOG_NAME="$(ls -ltr "$HOME"/HLstatsX/logs/ | awk '{ print $NF }' | tail -1)"
   # log output
-  echo "SRCDS: timeouts, stalled, fails detected..!" >>"$HOME"/HLstatsX/logs/"$HLSTATSX_LOG_NAME"
-  # log output
-  echo "SRCDS: restarting hlstatsx daemon..!" >>"$HOME"/HLstatsX/logs/"$HLSTATSX_LOG_NAME"
+  echo "-- Timeouts, Stalled, Fails detected..! @ $(date | xargs)" >>"$HOME"/bin/include/cron.log
+  echo "++ Restarting hlstatsx daemon..!" >>"$HOME"/bin/include/cron.log
   # keep old logs
   cat "$HOME"/HLstatsX/logs/hlstats_* | awk 'seen[$0]++' >>"$HOME"/HLstatsX/logs/hlstats_old
   # keep lines
