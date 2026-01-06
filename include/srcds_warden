@@ -23,7 +23,7 @@
 ################################################################################
 
 # hlstatsx warden
-if [[ "$(egrep -c "Timeout|stalled|Can't|failed" "$HOME"/HLstatsX/logs/hlstats_* 2>/dev/null)" -gt "0" ]]; then
+if [[ "$(egrep -c "Timeout|stalled|Can't|failed" "$HOME"/HLstatsX/logs/hlstats_* 2>/dev/null | awk -F: '{ print $NF }' | tail -1)" -gt "0" ]]; then
   HLSTATSX_LOG_NAME="$(ls -ltr "$HOME"/HLstatsX/logs/ | awk '{ print $NF }' | tail -1)"
   # log output
   echo "SRCDS: timeouts, stalled, fails detected..!" >>"$HOME"/HLstatsX/logs/"$HLSTATSX_LOG_NAME"
@@ -31,6 +31,8 @@ if [[ "$(egrep -c "Timeout|stalled|Can't|failed" "$HOME"/HLstatsX/logs/hlstats_*
   echo "SRCDS: restarting hlstatsx daemon..!" >>"$HOME"/HLstatsX/logs/"$HLSTATSX_LOG_NAME"
   # keep old logs
   cat "$HOME"/HLstatsX/logs/hlstats_* | awk 'seen[$0]++' >>"$HOME"/HLstatsX/logs/hlstats_old
+  # keep lines
+  echo "$(tail -1000 "$HOME"/HLstatsX/logs/hlstats_old)" >"$HOME"/HLstatsX/logs/hlstats_old
   # stop stats
   cd "$HLSTATSX_DIR" && ./run_hlstats restart &>/dev/null
 fi
