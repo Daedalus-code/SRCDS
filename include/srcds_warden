@@ -43,12 +43,15 @@ fi
 
 ################################################################################
 
-# if bot_random is set
-if [[ "$(grep -c "bot_random" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg)" -eq "1" ]]; then
-  # random bot diffculty
-  RANDOM_VAL=$((((RANDOM % 3) + 1)))
-  # set random bot diffculty in server configuration
-  sed -i "s/^bot_difficulty.*/bot_difficulty $RANDOM_VAL/" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg
+# if random_bots is set in srcds configuration
+if [[ "$(grep -c "RANDOM_BOTS" "$HOME"/bin/include/srcds.conf)" -eq "1" ]]; then
+  # if bot_difficulty configuration exist
+  if [[ "$(grep -c "bot_difficulty" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg)" -eq "1" ]]; then
+    # random bot diffculty
+    RANDOM_VAL=$((((RANDOM % 3) + 1)))
+    # set random bot diffculty in server configuration
+    sed -i "s/^bot_difficulty.*/bot_difficulty $RANDOM_VAL/" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg
+  fi
 fi
 
 # END
