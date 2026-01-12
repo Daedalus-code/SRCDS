@@ -196,7 +196,8 @@ SERVER_MAP=de_dust
 SERVER_MAX=20
 SERVER_PORT=27015
 SERVER_IP=0.0.0.0
-SERVER_GAME=$GAME_DIR" >"$HOME_INSTALL"/bin/include/srcds.conf
+SERVER_GAME=$GAME_DIR
+SERVER_RANDOM_BOTS=0" >"$HOME_INSTALL"/bin/include/srcds.conf
 }
 
 ################################################################################
