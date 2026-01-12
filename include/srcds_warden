@@ -43,7 +43,7 @@ fi
 
 ################################################################################
 
-# if random_bots is set in srcds configuration
+# if server_random_bots is set in srcds configuration
 if [[ "$(grep "SERVER_RANDOM_BOTS" "$HOME"/bin/include/srcds.conf | awk -F= '{ print $NF }')" -eq "1" ]]; then
   # if bot_difficulty configuration exist
   if [[ "$(grep -c "bot_difficulty" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg)" -eq "1" ]]; then
