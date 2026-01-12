@@ -26,8 +26,6 @@ source "$HOME/bin/include/srcds.conf"
 
 ################################################################################
 
-dialog --yesno "Stop server and daemon?" 5 29
-[[ ! $? == 0 ]] && return 1
 # stop stats
 cd "$HLSTATSX_DIR" && ./run_hlstats stop &>/dev/null
 # stop server
