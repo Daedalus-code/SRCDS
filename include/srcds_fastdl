@@ -122,8 +122,14 @@ function srcds_fastdl() {
       ONLINE_CHECK=$(ls "$MAP_DIR"/*.bsp.bz2 2>/dev/null | head -n1 | xargs -n1 basename)
       FASTDL_STATUS="No maps"
       FASTDL_SPEED="N/A"
+
+      # if not found
+      if [[ ! -f /tmp/fdlsp.tmp ]]; then
+        echo "0" >/tmp/fdlsp.tmp
+      fi
+
       # file age
-      FILE_AGE="$(($(date +%s) - $(stat -c %Y /tmp/fdlsp.tmp)))"
+      FILE_AGE="$(($(date +%s) - $(stat -c %Y /tmp/fdlsp.tmp 2>/dev/null)))"
 
       if [[ -n "$ONLINE_CHECK" ]] && curl -fsI "$FASTDL_DWN_URL/maps/$ONLINE_CHECK" >/dev/null; then
         FASTDL_STATUS="OK"
