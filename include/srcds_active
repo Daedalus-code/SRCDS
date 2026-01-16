@@ -173,7 +173,6 @@ function srcds_active() {
   done
 
   dialog --title "  Player info" --no-collapse --msgbox "$MSG" "$HEIGHT" "$WIDTH"
-  srcds_active
 }
 
 # END
