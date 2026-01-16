@@ -249,13 +249,13 @@ EOF
   ##############################################################################
 
   dialog --msgbox "Bot profile generation complete!" 5 36
-  dialog --yesno "Install generated botprofile.db?" 5 40
+  dialog --yesno "Save generated botprofile.db?" 5 34
   if [[ $? -eq 0 ]]; then
     # install bot profile
     mkdir -p "$SRCDS_DIR/$SERVER_GAME/custom/bots"
     RAND_SUFFIX=$((RANDOM % 10000))
     mv botprofile.db "$SRCDS_DIR/$SERVER_GAME/custom/bots/botprofile_$RAND_SUFFIX.db"
-    dialog --msgbox "Installed as botprofile_$RAND_SUFFIX.db\nBots: $NUM_PROFILES" 6 44
+    dialog --msgbox "Saved as botprofile_$RAND_SUFFIX.db\nBots: $NUM_PROFILES" 6 40
   else
     # remove bot profile
     rm "$HOME"/botprofile.db &>/dev/null
