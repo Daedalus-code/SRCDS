@@ -177,7 +177,11 @@ function srcds_configs() {
 ################################################################################
 
 # screenlog.0
-ACTIVE_STATUS="$(tail -100 "$HOME"/bin/include/screenlog.0 2>/dev/null | grep -A7 "hostname" | tail -8 | tr -d ')\r')"
+ACTIVE_STATUS="$(
+  TMP_STATUS="$(tail -100 "$HOME"/bin/include/screenlog.0 2>/dev/null | grep -A7 "hostname" | tail -8 | tr -d ')\r')"
+  printf '%s' "${TMP_STATUS:-$ACTIVE_STATUS}"
+)"
+
 ACTIVE_HOSTNAME="$(grep "hostname" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg 2>/dev/null | awk -F'"' '{ print $2 }')"
 
 # if no hostname configuration
@@ -227,21 +231,6 @@ fi
 
 # srcds pid status
 if [[ "$SRCDS_PID" > "0" ]]; then
-
-  # if active data
-  if [[ ! -f "$HOME"/bin/include/status.tmp && ! -z "$ACTIVE_MAP" && ! -z "$ACTIVE_WAN" && ! -z "$ACTIVE_PLAYERS" ]]; then
-    # keep data
-    echo "Map: $ACTIVE_MAP WAN: $ACTIVE_WAN Players: $ACTIVE_PLAYERS" >"$HOME"/bin/include/status.tmp
-  fi
-
-  if [[ -f "$HOME"/bin/include/status.tmp ]]; then
-    # use latest cache
-    STATUS_DATA="$(<"$HOME"/bin/include/status.tmp)"
-    ACTIVE_MAP="$(echo "$STATUS_DATA" | awk '{ print $2 }')"
-    ACTIVE_WAN="$(echo "$STATUS_DATA" | awk '{ print $4 }')"
-    ACTIVE_PLAYERS="$(echo "$STATUS_DATA" | awk '{ print $6 }')"
-  fi
-
   ACTIVE_WAN="${ACTIVE_WAN}:${SERVER_PORT}"
   SRCDS_STATUS="OK"
 else
