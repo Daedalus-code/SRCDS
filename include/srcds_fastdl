@@ -144,11 +144,12 @@ function srcds_fastdl() {
           FASTDL_SPEED=$(curl -o /dev/null -s -w "%{speed_download}" "$FASTDL_DWN_URL/maps/$ONLINE_CHECK" | awk '{printf "%.1f KB/s",$1/1024}')
           # track value for average
           echo "$FASTDL_SPEED" >>"$HOME"/bin/include/logs/fastdl.log
-          # average value
+          # keep n lines
           echo "$(tail -10 "$HOME"/bin/include/logs/fastdl.log 2>/dev/null)" >"$HOME"/bin/include/logs/fastdl.log
         else
           FASTDL_SPEED="$(tail -1 "$HOME"/bin/include/logs/fastdl.log)"
         fi
+        # average speed
         TOT_FASTDL_SPEED="$(awk '{sum += $1} END {print sum}' "$HOME"/bin/include/logs/fastdl.log 2>/dev/null)"
         TOT_FASTDL_SPEED_COUNT="$(wc -l "$HOME"/bin/include/logs/fastdl.log 2>/dev/null | awk '{ print $1 }')"
         AVG_FASTDL_SPEED="Average: $(echo "$TOT_FASTDL_SPEED/$TOT_FASTDL_SPEED_COUNT" | bc 2>/dev/null) KB/s"
