@@ -91,8 +91,8 @@ TOTAL_PCT=$((TOTAL_USED_MEM_MB * 100 / TOTAL_MEM_MB))
 NET_IFACE=$(ip -o link show | awk -F': ' '{print $2}' | grep -v lo | head -n1)
 
 # get RX and TX bytes in MB
-RX_BYTES=$(</sys/class/net/$NET_IFACE/statistics/rx_bytes)
-TX_BYTES=$(</sys/class/net/$NET_IFACE/statistics/tx_bytes)
+RX_BYTES=$(cat /sys/class/net/$NET_IFACE/statistics/rx_bytes)
+TX_BYTES=$(cat /sys/class/net/$NET_IFACE/statistics/tx_bytes)
 RX_MB=$(awk -v b="$RX_BYTES" 'BEGIN {printf "%.2f", b/1024/1024}')
 TX_MB=$(awk -v b="$TX_BYTES" 'BEGIN {printf "%.2f", b/1024/1024}')
 
