@@ -29,8 +29,6 @@ function srcds_active() {
     return 1
   fi
 
-  update_active
-
   TMPFILE="/$HOME/bin/include/logs/user_id"
 
   [[ ! -f "$TMPFILE" ]] && {
@@ -173,6 +171,7 @@ function srcds_active() {
   done
 
   dialog --title "  Player info" --no-collapse --msgbox "$MSG" "$HEIGHT" "$WIDTH"
+  update_active
 }
 
 # END
