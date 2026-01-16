@@ -370,7 +370,7 @@ function srcds_bot_db_switch() {
     cp "$SELECTED_DB" "${BOTDIR}_2"
     mv "$SELECTED_DB" "$BOTDIR/botprofile.db"
   fi
-  dialog --msgbox "Bot profile updated $SELECTED_NAME" 5 50
+  dialog --msgbox "Bot profile updated $SELECTED_NAME" 5 44
 }
 
 ################################################################################
