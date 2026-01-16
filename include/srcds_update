@@ -40,15 +40,20 @@ function srcds_update() {
   cd "$INSTALL_DIR" && git pull https://github.com/Daedalus-code/SRCDS.git
   sleep 1
   cp -r "$HOME"/SRCDS/* "$HOME"/bin
+
   # executable
   chmod +x "$HOME"/bin/srcds
   chmod +x "$HOME"/bin/include/start_srcds
   chmod +x "$HOME"/bin/include/stop_srcds
+
   # dialog output
   dialog --msgbox "srcds file updated successfully." 5 36
-  # ensure ~/bin, include exists
+
+  # ensure ~/bin, include, logs exists
   mkdir -p "$HOME/bin"
   mkdir -p "$HOME/bin/include"
+  mkdir -p "$HOME_INSTALL/bin/include/logs"
+
   echo "$INSTALL_DIR" >"$HOME"/bin/DIR
   cp -r "$HOME"/SRCDS/* "$HOME"/bin
   clear

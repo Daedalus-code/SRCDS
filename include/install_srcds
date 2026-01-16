@@ -60,22 +60,28 @@ fi
 
 HOME_INSTALL="/home/$USER_INPUT"
 
-# ensure ~/bin, include exists
-mkdir -p "$HOME_INSTALL/bin"
-mkdir -p "$HOME_INSTALL/bin/include"
-mkdir -p "$HOME_INSTALL/bin/include/logs"
-# copy directory
-cp -r "$HOME_INSTALL"/SRCDS/* "$HOME_INSTALL"/bin
-# executable
-chmod +x "$HOME_INSTALL"/bin/srcds
-chmod +x "$HOME_INSTALL"/bin/include/start_srcds
-chmod +x "$HOME_INSTALL"/bin/include/stop_srcds
-# line version
-LOC_V=$(wc -l <"$HOME_INSTALL"/bin/srcds)
-echo "v$LOC_V" >"$HOME_INSTALL/bin/version"
-# date updated
-echo "$(date | xargs)" >"$HOME_INSTALL"/bin/updated
-cd && clear && exit
+if [[ ! -f "$HOME_INSTALL"/bin/srcds ]]; then
+  # ensure ~/bin, include exists
+  mkdir -p "$HOME_INSTALL/bin"
+  mkdir -p "$HOME_INSTALL/bin/include"
+  mkdir -p "$HOME_INSTALL/bin/include/logs"
+
+  # copy directory
+  cp -r "$HOME_INSTALL"/SRCDS/* "$HOME_INSTALL"/bin
+
+  # executable
+  chmod +x "$HOME_INSTALL"/bin/srcds
+  chmod +x "$HOME_INSTALL"/bin/include/start_srcds
+  chmod +x "$HOME_INSTALL"/bin/include/stop_srcds
+
+  # line version
+  LOC_V=$(wc -l <"$HOME_INSTALL"/bin/srcds)
+  echo "v$LOC_V" >"$HOME_INSTALL/bin/version"
+
+  # date updated
+  echo "$(date | xargs)" >"$HOME_INSTALL"/bin/updated
+  cd && clear && exit
+fi
 
 ################################################################################
 # bashrc
