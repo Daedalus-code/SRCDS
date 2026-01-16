@@ -31,7 +31,7 @@ function srcds_active() {
 
   update_active
 
-  TMPFILE="/$HOME/bin/include/user_id"
+  TMPFILE="/$HOME/bin/include/logs/user_id"
 
   [[ ! -f "$TMPFILE" ]] && {
     dialog --msgbox "Player file not found:\n$TMPFILE" 8 50
