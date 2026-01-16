@@ -52,7 +52,7 @@ function srcds_update() {
   # ensure ~/bin, include, logs exists
   mkdir -p "$HOME/bin"
   mkdir -p "$HOME/bin/include"
-  mkdir -p "$HOME_INSTALL/bin/include/logs"
+  mkdir -p "$HOME/bin/include/logs"
 
   echo "$INSTALL_DIR" >"$HOME"/bin/DIR
   cp -r "$HOME"/SRCDS/* "$HOME"/bin
