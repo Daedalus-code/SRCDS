@@ -176,11 +176,17 @@ function srcds_configs() {
 # srcds menu
 ################################################################################
 
-# screenlog.0
-ACTIVE_STATUS="$(
-  TMP_STATUS="$(tail -100 "$HOME"/bin/include/logs/screenlog.0 2>/dev/null | grep -A7 "hostname" | tail -8 | tr -d ')\r')"
-  printf '%s' "${TMP_STATUS:-$ACTIVE_STATUS}"
-)"
+CACHE="$HOME/bin/include/logs/status.log"
+
+TMP_STATUS="$(tail -100 "$HOME"/bin/include/logs/screenlog.0 2>/dev/null | grep -A7 "hostname" | tail -8 | tr -d ')\r')"
+
+if [ -n "$TMP_STATUS" ]; then
+  printf '%s\n' "$TMP_STATUS" >"$CACHE"
+fi
+
+ACTIVE_STATUS="$(cat "$CACHE" 2>/dev/null)"
+
+################################################################################
 
 ACTIVE_HOSTNAME="$(grep "hostname" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg 2>/dev/null | awk -F'"' '{ print $2 }')"
 
@@ -207,14 +213,11 @@ ACTIVE_MAX_AMOUNT="$(echo "$ACTIVE_STATUS" | grep "players" | awk '{ print $7 }'
 ACTIVE_MAP="$(echo "$ACTIVE_STATUS" | grep "map" | awk '{ print $3 }')"
 ACTIVE_WAN="$(echo "$ACTIVE_STATUS" | grep 'udp/ip' | awk '{print $NF}')"
 
-function update_active() {
-  # if greater than n
-  if [[ "$ACTIVE_AMOUNT" -gt "0" ]]; then
-    # update active players
-    grep -A"$ACTIVE_AMOUNT" "userid" "$HOME"/bin/include/logs/screenlog.0 2>/dev/null | grep -v "rcon" | tail -"$ACTIVE_AMOUNT" | tr -d '#' | column -t >"$HOME"/bin/include/logs/user_id
-  fi
-}
-update_active
+# if greater than n
+if [[ "$ACTIVE_AMOUNT" -gt "0" ]]; then
+  # update active players
+  grep -A"$ACTIVE_AMOUNT" "userid" "$HOME"/bin/include/logs/screenlog.0 2>/dev/null | grep -v "rcon" | tail -"$ACTIVE_AMOUNT" | tr -d '#' | column -t >"$HOME"/bin/include/logs/user_id
+fi
 
 ################################################################################
 
