@@ -226,7 +226,7 @@ if [ -f "$SCREEN_LOG" ] && [ "$(wc -l <"$SCREEN_LOG")" -ge "$SCREEN_MAXLINES" ];
 fi
 
 # if active data
-if [[ -f "$HOME"/bin/include/status.tmp && -n "$ACTIVE_MAP" && -n "$ACTIVE_WAN" && -n "$ACTIVE_PLAYERS" ]]; then
+if [[ ! -f "$HOME"/bin/include/status.tmp && -n "$ACTIVE_MAP" && -n "$ACTIVE_WAN" && -n "$ACTIVE_PLAYERS" ]]; then
   # keep data
   echo "Map: $ACTIVE_MAP WAN: $ACTIVE_WAN Players: $ACTIVE_PLAYERS" >"$HOME"/bin/include/status.tmp
 fi
