@@ -27,7 +27,7 @@ source "$HOME/bin/include/srcds_warden"
 
 ################################################################################
 
-LOGFILE="$HOME/bin/include/screenlog.0"
+LOGFILE="$HOME/bin/include/logs/screenlog.0"
 
 # if not running
 if ! screen -list 2>/dev/null | grep -q "[.]srcds_screen"; then
