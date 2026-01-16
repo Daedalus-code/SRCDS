@@ -25,8 +25,8 @@
 function srcds_logs() {
 
   # total log lines
-  TOTAL_LINES="$(wc -l "$HOME"/bin/include/cron.log "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | tail -1 | awk '{ print $1 }')"
-  TOTAL_SIZE=$(stat -c%s "$HOME"/bin/include/cron.log "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | awk '{sum += $1} END {print sum}')
+  TOTAL_LINES="$(wc -l "$HOME"/bin/include/logs/cron.log "$HOME"/bin/include/logs/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | tail -1 | awk '{ print $1 }')"
+  TOTAL_SIZE=$(stat -c%s "$HOME"/bin/include/logs/cron.log "$HOME"/bin/include/logs/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | awk '{sum += $1} END {print sum}')
 
   if [[ $TOTAL_SIZE -ge 1073741824 ]]; then
     TOTAL_SIZE="$(awk "BEGIN {printf \"%.2f\", $TOTAL_SIZE/1024/1024/1024}") GB"
@@ -145,12 +145,12 @@ function srcds_logs() {
 
   "6")
 
-    SCREEN_LOGS=$(ls -t "$HOME"/bin/include/screenlog.0 2>/dev/null | head -n 1)
+    SCREEN_LOGS=$(ls -t "$HOME"/bin/include/logs/screenlog.0 2>/dev/null | head -n 1)
     if [ -z "$SCREEN_LOGS" ]; then
       dialog --msgbox "No log files found" 5 24
     else
       # keep n lines
-      echo "$(tail -1440 "$HOME"/bin/include/screenlog.0 2>/dev/null)" >"$HOME"/bin/include/screenlog.0
+      echo "$(tail -1440 "$HOME"/bin/include/logs/screenlog.0 2>/dev/null)" >"$HOME"/bin/include/logs/screenlog.0
       dialog --tailbox "$SCREEN_LOGS" 30 121
     fi
     srcds_logs # go back to configs menu
@@ -158,12 +158,12 @@ function srcds_logs() {
 
   "7")
 
-    CRON_LOGS="$(cat "$HOME"/bin/include/cron.log 2>/dev/null | sort | uniq)"
+    CRON_LOGS="$(cat "$HOME"/bin/include/logs/cron.log 2>/dev/null | sort | uniq)"
     if [ -z "$CRON_LOGS" ]; then
       dialog --msgbox "No log files found" 5 24
     else
       # keep n lines
-      echo "$(tail -1440 "$HOME"/bin/include/cron.log 2>/dev/null)" >"$HOME"/bin/include/cron.log
+      echo "$(tail -1440 "$HOME"/bin/include/logs/cron.log 2>/dev/null)" >"$HOME"/bin/include/logs/cron.log
       dialog --msgbox "$CRON_LOGS" 0 0
     fi
     srcds_logs # go back to configs menu
@@ -178,7 +178,7 @@ function srcds_logs() {
       return 1
     fi
     # remove logs
-    rm "$HOME"/bin/include/cron.log "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* &>/dev/null
+    rm "$HOME"/bin/include/logs/cron.log "$HOME"/bin/include/logs/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* &>/dev/null
     ;;
   esac
 }

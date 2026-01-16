@@ -39,6 +39,7 @@ source "$HOME/bin/include/srcds_fastdl"
 source "$HOME/bin/include/srcds_console"
 source "$HOME/bin/include/srcds_crontab"
 source "$HOME/bin/include/srcds_options"
+source "$HOME/bin/include/srcds_functions"
 source "$HOME/bin/include/random_password"
 
 ################################################################################
@@ -178,7 +179,7 @@ function srcds_configs() {
 
 # screenlog.0
 ACTIVE_STATUS="$(
-  TMP_STATUS="$(tail -100 "$HOME"/bin/include/screenlog.0 2>/dev/null | grep -A7 "hostname" | tail -8 | tr -d ')\r')"
+  TMP_STATUS="$(tail -100 "$HOME"/bin/include/logs/screenlog.0 2>/dev/null | grep -A7 "hostname" | tail -8 | tr -d ')\r')"
   printf '%s' "${TMP_STATUS:-$ACTIVE_STATUS}"
 )"
 
@@ -211,7 +212,7 @@ function update_active() {
   # if greater than n
   if [[ "$ACTIVE_AMOUNT" -gt "0" ]]; then
     # update active players
-    grep -A"$ACTIVE_AMOUNT" "userid" "$HOME"/bin/include/screenlog.0 2>/dev/null | grep -v "rcon" | tail -"$ACTIVE_AMOUNT" | tr -d '#' | column -t >"$HOME"/bin/include/user_id
+    grep -A"$ACTIVE_AMOUNT" "userid" "$HOME"/bin/include/logs/screenlog.0 2>/dev/null | grep -v "rcon" | tail -"$ACTIVE_AMOUNT" | tr -d '#' | column -t >"$HOME"/bin/include/logs/user_id
   fi
 }
 update_active

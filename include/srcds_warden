@@ -31,8 +31,8 @@ fi
 # if any issues
 if [[ "$HLSTATSX_LOGS" -gt "0" ]]; then
   # log output
-  echo "-- Timeouts, Stalled, Fails detected..! @ $(date | xargs)" >>"$HOME"/bin/include/cron.log
-  echo "++ Restarting hlstatsx daemon..!" >>"$HOME"/bin/include/cron.log
+  echo "-- Timeouts, Stalled, Fails detected..! @ $(date | xargs)" >>"$HOME"/bin/include/logs/cron.log
+  echo "++ Restarting hlstatsx daemon..!" >>"$HOME"/bin/include/logs/cron.log
   # keep old logs
   cat "$HOME"/HLstatsX/logs/hlstats_* | awk 'seen[$0]++' >>"$HOME"/HLstatsX/logs/hlstats_old
   # keep lines
