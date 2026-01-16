@@ -39,6 +39,7 @@ if ! screen -list 2>/dev/null | grep -q "[.]srcds_screen"; then
     -usercon -console -game "$SERVER_GAME" \
     -port "$SERVER_PORT" +map "$SERVER_MAP" \
     +maxplayers "$SERVER_MAX" +ip "$SERVER_IP"
+  dialog --msgbox "Server and daemon started!" 5 32
 else
   echo "Server is already running on port $SERVER_PORT"
 fi

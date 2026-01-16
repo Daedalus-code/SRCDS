@@ -88,10 +88,8 @@ $SRCDS_PID_INFO" 0 0
     # return to menu
     return 1
   fi
-  # start server ###############################################################
+  # start server
   bash "$HOME"/bin/include/start_srcds
-  ##############################################################################
-  dialog --msgbox "Server and daemon started!" 5 32
 }
 
 ################################################################################
@@ -102,10 +100,8 @@ srcds_stop() {
   if [[ ! -z "$SRCDS_PID" ]]; then
     dialog --yesno "Stop server and daemon?" 5 29
     [[ ! $? == 0 ]] && return 1
-    # stop server ##############################################################
+    # stop server
     bash "$HOME"/bin/include/stop_srcds
-    ############################################################################
-    dialog --msgbox "Server and daemon stopped!" 5 32
   else
     dialog --msgbox "Server is not running!" 5 28
   fi
