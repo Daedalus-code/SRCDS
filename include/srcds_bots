@@ -268,8 +268,8 @@ EOF
 ################################################################################
 
 function srcds_bot_names() {
-  dialog --msgbox "Sorting $(wc -l "$BOTDIR"/names.txt | awk '{ print $1 }') names, keeping uniq" 5 "$(echo "$(wc -L "$BOTDIR"/names.txt | awk '{ print $1 }')+33" | bc 2>/dev/null)"
-  echo "$(cat "$BOTDIR"/names.txt 2>/dev/null | sort | uniq)" >/tmp/nm.tmp
+  dialog --msgbox "Sorting $(wc -l "$BOTDIR"/names.txt | awk '{ print $1 }') names, keeping uniq" 5 "$(echo "$(echo "Sorting $(wc -l "$BOTDIR"/names.txt | awk '{ print $1 }') names, keeping uniq" | wc -L)+5" | bc 2>/dev/null)"
+  echo "$(sed '/^[[:space:]]*$/d' "$BOTDIR"/names.txt 2>/dev/null | sort -u)" >/tmp/nm.tmp
   mv /tmp/nm.tmp "$BOTDIR"/names.txt
   nano "$BOTDIR"/names.txt
 }
