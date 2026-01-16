@@ -22,11 +22,13 @@
 #
 ################################################################################
 
-# srcds pid
-SRCDS_PID="$(pidof srcds_linux 2>/dev/null)"
-# screen pid
-SCREEN_PID="$(screen -li 2>/dev/null | grep "srcds_screen" 2>/dev/null | awk -F. '{ print $1 }' | awk '{ print $1 }')"
-# hlstats.pl pid
-HLSTATSX_PID="$(ps -p "$(pgrep hlstats.pl 2>/dev/null)" 2>/dev/null | grep -c "PID")"
+function srcds_pid() {
+  # srcds pid
+  SRCDS_PID="$(pidof srcds_linux 2>/dev/null)"
+  # screen pid
+  SCREEN_PID="$(screen -li 2>/dev/null | grep "srcds_screen" 2>/dev/null | awk -F. '{ print $1 }' | awk '{ print $1 }')"
+  # hlstats.pl pid
+  HLSTATSX_PID="$(ps -p "$(pgrep hlstats.pl 2>/dev/null)" 2>/dev/null | grep -c "PID")"
+}
 
 # END
