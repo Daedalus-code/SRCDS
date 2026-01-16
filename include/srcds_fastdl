@@ -166,7 +166,7 @@ function srcds_fastdl() {
         FASTDL_HOST="$(<"$HOME"/bin/include/logs/vps_host)"
       fi
       # if any data
-      if [[ -f "$HOME"/bin/include/logs/vps_host ]]; then
+      if [[ -f "$HOME"/bin/include/logs/vps_dir ]]; then
         FASTDL_DIR="$(<"$HOME"/bin/include/logs/vps_dir)"
       fi
 
