@@ -183,15 +183,15 @@ function srcds_fastdl() {
 
 Maps
 ├─Total.......: $NUM_BSP
-├─Compressed..: $NUM_BSP_BZ2 ($MAPS_COMP_PERC%)
-├─Space Saved.: $MAPS_SAVED_PERC%
+├─Compressed..: ${MAPS_COMP_PERC}%
+├─Space Saved.: ${MAPS_SAVED_PERC}%
 ├─Size Raw....: $MAP_BSP_HUMAN (.bsp)
 └─Size DL.....: $MAP_BZ2_HUMAN (.bz2)
 
 Sounds
 ├─Total.......: $NUM_SOUND
-├─Compressed..: $NUM_SOUND_BZ2 ($SOUND_COMP_PERC%)
-├─Space Saved.: $SOUND_SAVED_PERC%
+├─Compressed..: ${SOUND_COMP_PERC}%
+├─Space Saved.: ${SOUND_SAVED_PERC}%
 ├─Size Raw....: $SOUND_RAW_HUMAN (.wav/.mp3)
 └─Size DL.....: $SOUND_BZ2_HUMAN (.bz2)"
 
