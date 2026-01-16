@@ -84,7 +84,7 @@ function srcds_bot_generate() {
   ##############################################################################
 
   dialog --inputbox "Bots to generate:" 7 40 24 2>/tmp/bot_count
-  NUM_PROFILES=$(cat /tmp/bot_count)
+  NUM_PROFILES=$(</tmp/bot_count)
   [[ -z "$NUM_PROFILES" || "$NUM_PROFILES" -le 0 ]] && return 1
 
   ##############################################################################
@@ -269,7 +269,7 @@ EOF
 
 function srcds_bot_names() {
   dialog --msgbox "Sorting $(wc -l "$BOTDIR"/names.txt | awk '{ print $1 }') names, keeping uniq" 5 "$(echo "$(wc -L "$BOTDIR"/names.txt | awk '{ print $1 }')+20" | bc 2>/dev/null)"
-  echo "$(cat "$BOTDIR"/names.txt 2>/dev/null | sort | uniq)" >/tmp/nm.tmp
+  echo "$(<"$BOTDIR"/names.txt 2>/dev/null | sort | uniq)" >/tmp/nm.tmp
   mv /tmp/nm.tmp "$BOTDIR"/names.txt
   nano "$BOTDIR"/names.txt
 }

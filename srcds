@@ -207,7 +207,7 @@ function update_active() {
   # if greater than n
   if [[ "$ACTIVE_AMOUNT" -gt "0" ]]; then
     # update active players
-    grep -A"$ACTIVE_AMOUNT" "userid" "$HOME"/bin/include/screenlog.0 2>/dev/null | grep -v "rcon" | tail -"$ACTIVE_AMOUNT" | tr -d '#' | column -t >/tmp/usrid.tmp
+    grep -A"$ACTIVE_AMOUNT" "userid" "$HOME"/bin/include/screenlog.0 2>/dev/null | grep -v "rcon" | tail -"$ACTIVE_AMOUNT" | tr -d '#' | column -t >"$HOME"/bin/include/user_id
   fi
 }
 update_active

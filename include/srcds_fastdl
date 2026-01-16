@@ -122,14 +122,15 @@ function srcds_fastdl() {
       ONLINE_CHECK=$(ls "$MAP_DIR"/*.bsp.bz2 2>/dev/null | head -n1 | xargs -n1 basename)
       FASTDL_STATUS="No maps"
       FASTDL_SPEED="N/A"
+      FASTDL_USER="N/A"
 
       # if not found
-      if [[ ! -f /tmp/fdlsp.tmp ]]; then
-        echo "0" >/tmp/fdlsp.tmp
+      if [[ ! -f "$HOME"/bin/include/fastdl_speed.log ]]; then
+        echo "0" >"$HOME"/bin/include/fastdl_speed.log
       fi
 
       # file age
-      FILE_AGE="$(($(date +%s) - $(stat -c %Y /tmp/fdlsp.tmp 2>/dev/null)))"
+      FILE_AGE="$(($(date +%s) - $(stat -c %Y "$HOME"/bin/include/fastdl_speed.log 2>/dev/null)))"
 
       if [[ -n "$ONLINE_CHECK" ]] && curl -fsI "$FASTDL_DWN_URL/maps/$ONLINE_CHECK" >/dev/null; then
         FASTDL_STATUS="OK"
@@ -137,22 +138,25 @@ function srcds_fastdl() {
         if [[ "$FILE_AGE" -gt "600" ]]; then
           FASTDL_SPEED=$(curl -o /dev/null -s -w "%{speed_download}" "$FASTDL_DWN_URL/maps/$ONLINE_CHECK" | awk '{printf "%.1f KB/s",$1/1024}')
           # track value for average
-          echo "$FASTDL_SPEED" >>/tmp/fdlsp.tmp
+          echo "$FASTDL_SPEED" >>"$HOME"/bin/include/fastdl_speed.log
         else
-          FASTDL_SPEED="$(tail -1 /tmp/fdlsp.tmp)"
+          FASTDL_SPEED="$(tail -1 "$HOME"/bin/include/fastdl_speed.log)"
         fi
         # average value
-        echo "$(tail -10 /tmp/fdlsp.tmp 2>/dev/null)" >/tmp/fdlsp.tmp
-        TOT_FASTDL_SPEED="$(awk '{sum += $1} END {print sum}' /tmp/fdlsp.tmp 2>/dev/null)"
-        TOT_FASTDL_SPEED_COUNT="$(wc -l /tmp/fdlsp.tmp 2>/dev/null | awk '{ print $1 }')"
+        echo "$(tail -10 "$HOME"/bin/include/fastdl_speed.log 2>/dev/null)" >"$HOME"/bin/include/fastdl_speed.log
+        TOT_FASTDL_SPEED="$(awk '{sum += $1} END {print sum}' "$HOME"/bin/include/fastdl_speed.log 2>/dev/null)"
+        TOT_FASTDL_SPEED_COUNT="$(wc -l "$HOME"/bin/include/fastdl_speed.log 2>/dev/null | awk '{ print $1 }')"
         AVG_FASTDL_SPEED="Average: $(echo "$TOT_FASTDL_SPEED/$TOT_FASTDL_SPEED_COUNT" | bc 2>/dev/null) KB/s"
       else
         FASTDL_STATUS="Offline, no maps on server!"
         AVG_FASTDL_SPEED=""
       fi
 
+      ##########################################################################
+
       FASTDL_OUTPUT="FastDL
 ├─ Status......: $FASTDL_STATUS
+├─ User........: $FASTDL_USER
 ├─ URL.........: $FASTDL_DWN_URL
 └─ Speed.......: $FASTDL_SPEED $AVG_FASTDL_SPEED
 
@@ -171,6 +175,7 @@ Sounds
 └─ Size DL.....: $SOUND_BZ2_HUMAN (.bz2)"
 
       dialog --msgbox "$FASTDL_OUTPUT" 0 0
+
       ;;
 
       ##########################################################################
@@ -197,20 +202,36 @@ Sounds
 
     "3")
 
-      # default
+      # default user cache
       VPS_USER_CACHE=""
 
       # if found
-      if [[ -f /tmp/sshvps.tmp ]]; then
+      if [[ -f "$HOME"/bin/include/vps_user ]]; then
         # vps user cache
-        VPS_USER_CACHE="$(cat /tmp/sshvps.tmp 2>/dev/null)"
+        VPS_USER_CACHE="$(cat "$HOME"/bin/include/vps_user 2>/dev/null)"
       fi
 
       VPS_USER=$(dialog --inputbox "Enter VPS SSH username:" 8 40 "$VPS_USER_CACHE" 3>&1 1>&2 2>&3)
       # keep vps user cache
-      echo "$VPS_USER" >/tmp/sshvps.tmp
+      echo "$VPS_USER" >"$HOME"/bin/include/vps_user
 
-      VPS_HOST=$(dialog --inputbox "Enter VPS hostname or IP:" 8 40 3>&1 1>&2 2>&3)
+      ##########################################################################
+
+      # default host cache
+      VPS_HOST_CACHE=""
+
+      # if found
+      if [[ -f "$HOME"/bin/include/vps_host ]]; then
+        # vps user cache
+        VPS_HOST_CACHE="$(cat "$HOME"/bin/include/vps_host 2>/dev/null)"
+      fi
+
+      VPS_HOST=$(dialog --inputbox "Enter VPS hostname or IP:" 8 40 "$VPS_HOST_CACHE" 3>&1 1>&2 2>&3)
+      # keep vps host cache
+      echo "$VPS_HOST" >"$HOME"/bin/include/vps_host
+
+      ##########################################################################
+
       VPS_FASTDL_DIR=$(dialog --inputbox "FastDL directory:" 8 50 "/var/www/html/cstrike" 3>&1 1>&2 2>&3)
 
       compress_maps

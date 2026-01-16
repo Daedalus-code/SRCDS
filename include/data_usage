@@ -32,8 +32,8 @@ data_usage() {
   }
 
   # read RX/TX bytes
-  get_rx_bytes() { cat /sys/class/net/"$INTERFACE"/statistics/rx_bytes; }
-  get_tx_bytes() { cat /sys/class/net/"$INTERFACE"/statistics/tx_bytes; }
+  get_rx_bytes() { </sys/class/net/"$INTERFACE"/statistics/rx_bytes; }
+  get_tx_bytes() { </sys/class/net/"$INTERFACE"/statistics/tx_bytes; }
 
   RX_BYTES=$(get_rx_bytes)
   TX_BYTES=$(get_tx_bytes)

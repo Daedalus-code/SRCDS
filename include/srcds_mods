@@ -271,7 +271,7 @@ srcds_mods() {
     NOW=$(date +%s)
 
     if [ -f "$FILE" ] && [ $((NOW - $(stat -c %Y "$FILE"))) -lt $CACHE_TTL ]; then
-      cat "$FILE"
+      cat "$FILE" 2>/dev/null
       return
     fi
 

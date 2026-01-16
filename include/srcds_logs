@@ -158,7 +158,7 @@ function srcds_logs() {
 
   "7")
 
-    CRON_LOGS="$(cat "$HOME"/bin/include/cron*.log 2>/dev/null | sort | uniq)"
+    CRON_LOGS="$(<"$HOME"/bin/include/cron*.log | sort | uniq)"
     if [ -z "$CRON_LOGS" ]; then
       dialog --msgbox "No log files found" 5 24
     else
