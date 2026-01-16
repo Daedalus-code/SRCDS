@@ -367,22 +367,22 @@ srcds_mods() {
   fi
 
   PLUGIN_INFO="Plugins
-└─ Status....: ${#ENABLED[@]} Enabled - ${#DISABLED[@]} Disabled"
+└─Status....: ${#ENABLED[@]} Enabled - ${#DISABLED[@]} Disabled"
 
   ##############################################################################
 
   # info table text
   INFO="MetaMod
-├─ Installed.: $MM_VER $MM_INSTALLED
-└─ Latest....: $MM_LATEST_VER
+├─Installed.: $MM_VER $MM_INSTALLED
+└─Latest....: $MM_LATEST_VER
 
 SourceMod
-├─ Installed.: $SM_VER $SM_INSTALLED
-└─ Latest....: $SM_LATEST_VER
+├─Installed.: $SM_VER $SM_INSTALLED
+└─Latest....: $SM_LATEST_VER
 
 HLstatsX
-├─ Installed.: $HLSTATSX_VER $HLSTATSX_INSTALLED
-└─ Uptime....: $HLSTATX_STATUS"
+├─Installed.: $HLSTATSX_VER $HLSTATSX_INSTALLED
+└─Uptime....: $HLSTATX_STATUS"
 
   # menu
   CHOICE=$(dialog --clear \
