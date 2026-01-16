@@ -229,7 +229,7 @@ fi
 if [[ "$SRCDS_PID" > "0" ]]; then
 
   # if active data
-  if [[ -n "$ACTIVE_MAP" && -n "$ACTIVE_WAN" && -n "$ACTIVE_PLAYERS" ]]; then
+  if [[ ! -z "$ACTIVE_MAP" && ! -z "$ACTIVE_WAN" && ! -z "$ACTIVE_PLAYERS" ]]; then
     # keep data
     echo "Map: $ACTIVE_MAP WAN: $ACTIVE_WAN Players: $ACTIVE_PLAYERS" >"$HOME"/bin/include/status.tmp
   fi
