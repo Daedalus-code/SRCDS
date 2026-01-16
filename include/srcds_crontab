@@ -27,9 +27,9 @@ function srcds_crontab() {
 Server restart check (every 5 minutes)
 Daemon restart check (every 5 minutes)
 
-15 00 * * * cd $HOME/HLstatsX && ./hlstats-awards.pl >>$HOME/bin/include/cron.log 2>&1
-*/5 * * * * cd $HOME/HLstatsX && ./run_hlstats start >>$HOME/bin/include/cron.log 2>&1
-*/5 * * * * cd $HOME/bin/include && ./start_srcds >>$HOME/bin/include/cron.log 2>&1" 11 105
+15 00 * * * cd $HOME/HLstatsX && ./hlstats-awards.pl >>$HOME/bin/include/logs/cron.log 2>&1
+*/5 * * * * cd $HOME/HLstatsX && ./run_hlstats start >>$HOME/bin/include/logs/cron.log 2>&1
+*/5 * * * * cd $HOME/bin/include && ./start_srcds >>$HOME/bin/include/logs/cron.log 2>&1" 11 105
   crontab -e
 }
 
