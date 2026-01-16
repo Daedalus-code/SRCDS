@@ -26,6 +26,7 @@ exec </dev/tty >/dev/tty 2>&1
 
 ################################################################################
 
+source "$HOME/bin/include/srcds_pid"
 source "$HOME/bin/include/srcds.conf"
 source "$HOME/bin/include/srcds_bots"
 source "$HOME/bin/include/data_usage"
@@ -39,6 +40,12 @@ source "$HOME/bin/include/srcds_console"
 source "$HOME/bin/include/srcds_crontab"
 source "$HOME/bin/include/srcds_options"
 source "$HOME/bin/include/random_password"
+
+################################################################################
+# process id
+################################################################################
+
+srcds_pid
 
 ################################################################################
 # srcds version
@@ -179,9 +186,6 @@ srcds_logs
 # srcds menu
 ################################################################################
 
-SRCDS_PID="$(pidof srcds_linux 2>/dev/null)"
-SCREEN_PID="$(screen -li 2>/dev/null | grep "srcds_screen" 2>/dev/null | awk -F. '{ print $1 }' | awk '{ print $1 }')"
-
 # screenlog.0
 ACTIVE_STATUS="$(tail -100 "$HOME"/bin/include/screenlog.0 2>/dev/null | grep -A7 "hostname" | tail -8 | tr -d ')\r')"
 ACTIVE_HOSTNAME="$(grep "hostname" "$SRCDS_DIR"/"$SERVER_GAME"/cfg/server.cfg 2>/dev/null | awk -F'"' '{ print $2 }')"
@@ -220,19 +224,6 @@ update_active
 
 ################################################################################
 
-# if zero
-if [[ -z "$ACTIVE_PLAYERS" ]]; then
-  ACTIVE_PLAYERS="None"
-fi
-if [[ -z "$ACTIVE_MAP" ]]; then
-  ACTIVE_MAP="None"
-fi
-if [[ -z "$ACTIVE_WAN" ]]; then
-  ACTIVE_WAN="Offline"
-else
-  ACTIVE_WAN="${ACTIVE_WAN}:${SERVER_PORT}"
-fi
-
 SCREEN_LOG="$HLSTATSX_DIR/screenlog.0"
 SCREEN_SESSION="srcds_screen"
 SCREEN_MAXLINES="9000"
@@ -244,20 +235,24 @@ if [ -f "$SCREEN_LOG" ] && [ "$(wc -l <"$SCREEN_LOG")" -ge "$SCREEN_MAXLINES" ];
   screen -S "$SCREEN_SESSION" -X log on
 fi
 
-# srcds, screen, hlstatsx status
+# srcds pid status
 if [[ "$SRCDS_PID" > "0" ]]; then
+  ACTIVE_WAN="${ACTIVE_WAN}:${SERVER_PORT}"
   SRCDS_STATUS="OK"
 else
+  ACTIVE_MAP="N/A"
+  ACTIVE_WAN="N/A"
+  ACTIVE_PLAYERS="N/A"
   SRCDS_STATUS="NO"
 fi
+
+# screen pid status
 if [[ "$SCREEN_PID" > "0" ]]; then
   SCREEN_STATUS="OK"
 else
   SCREEN_STATUS="NO"
 fi
 
-# hlstats.pl pid
-HLSTATSX_PID="$(ps -p "$(pgrep hlstats.pl 2>/dev/null)" 2>/dev/null | grep -c "PID")"
 # if pid is running
 if [[ "$HLSTATSX_PID" -eq "1" ]]; then
   HLSTATSX_STATUS="hlstatsx OK"

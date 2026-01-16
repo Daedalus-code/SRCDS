@@ -22,22 +22,11 @@
 #
 ################################################################################
 
-source "$HOME/bin/include/srcds_pid"
-source "$HOME/bin/include/srcds.conf"
-
-################################################################################
-
-# pid
-srcds_pid
-
-# stop stats
-cd "$HLSTATSX_DIR" && ./run_hlstats stop &>/dev/null
-# stop server
-screen -X -S srcds_screen quit &>/dev/null
-if [[ "$SRCDS_PID" -gt "0" ]]; then
-  kill -9 "$SRCDS_PID" &>/dev/null
-fi
-WIDTH="$(echo "$(echo "Stopped SRCDS and HLstatsX ($SRCDS_PID/$SCREEN_PID)" | wc -L)+4" | bc 2>/dev/null)"
-dialog --msgbox "Stopped SRCDS and HLstatsX ($SRCDS_PID/$SCREEN_PID)" 5 "$WIDTH"
+# srcds pid
+SRCDS_PID="$(pidof srcds_linux 2>/dev/null)"
+# screen pid
+SCREEN_PID="$(screen -li 2>/dev/null | grep "srcds_screen" 2>/dev/null | awk -F. '{ print $1 }' | awk '{ print $1 }')"
+# hlstats.pl pid
+HLSTATSX_PID="$(ps -p "$(pgrep hlstats.pl 2>/dev/null)" 2>/dev/null | grep -c "PID")"
 
 # END
