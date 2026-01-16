@@ -120,10 +120,12 @@ function srcds_fastdl() {
 
       # online check
       ONLINE_CHECK=$(ls "$MAP_DIR"/*.bsp.bz2 2>/dev/null | head -n1 | xargs -n1 basename)
+      # default
       FASTDL_STATUS="No maps"
       FASTDL_SPEED="N/A"
       FASTDL_USER="N/A"
       FASTDL_HOST="N/A"
+      FASTDL_DIR="N/A"
 
       # if not found
       if [[ ! -f "$HOME"/bin/include/logs/fastdl.log ]]; then
@@ -163,6 +165,10 @@ function srcds_fastdl() {
       if [[ -f "$HOME"/bin/include/logs/vps_host ]]; then
         FASTDL_HOST="$(<"$HOME"/bin/include/logs/vps_host)"
       fi
+      # if any data
+      if [[ -f "$HOME"/bin/include/logs/vps_host ]]; then
+        FASTDL_DIR="$(<"$HOME"/bin/include/logs/vps_dir)"
+      fi
 
       ##########################################################################
 
@@ -170,7 +176,8 @@ function srcds_fastdl() {
 ├─Status......: $FASTDL_STATUS
 ├─User........: $FASTDL_USER
 ├─Host........: $FASTDL_HOST
-├─URL.........: $FASTDL_DWN_URL
+├─Directory...: $FASTDL_DIR
+├─Download....: $FASTDL_DWN_URL
 └─Speed.......: $FASTDL_SPEED $AVG_FASTDL_SPEED
 
 Maps
@@ -245,10 +252,18 @@ Sounds
 
       ##########################################################################
 
-      VPS_FASTDL_DIR=$(dialog --inputbox "FastDL directory:" 8 50 "/var/www/html/cstrike" 3>&1 1>&2 2>&3)
+      # default vps dir
+      if [[ ! -f "$HOME"/bin/include/logs/vps_dir ]]; then
+        VPS_DIR_CACHE="/var/www/html/cstrike"
+      fi
+
+      VPS_FASTDL_DIR=$(dialog --inputbox "FastDL directory:" 8 50 "$VPS_DIR_CACHE" 3>&1 1>&2 2>&3)
+      # keep vps dir cache
+      echo "$VPS_FASTDL_DIR" >"$HOME"/bin/include/logs/vps_dir
 
       compress_maps
       compress_sound
+      clear
 
       rsync -avz "$MAP_DIR/"*.bsp* "$VPS_USER@$VPS_HOST:$VPS_FASTDL_DIR/maps/"
       rsync -avz --include='*/' --include='*.bz2' --exclude='*' "$SOUND_DIR/" "$VPS_USER@$VPS_HOST:$VPS_FASTDL_DIR/sound/" 2>/dev/null
