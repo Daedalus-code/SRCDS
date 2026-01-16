@@ -123,6 +123,7 @@ function srcds_fastdl() {
       FASTDL_STATUS="No maps"
       FASTDL_SPEED="N/A"
       FASTDL_USER="N/A"
+      FASTDL_HOST="N/A"
 
       # if not found
       if [[ ! -f "$HOME"/bin/include/logs/fastdl.log ]]; then
@@ -154,11 +155,21 @@ function srcds_fastdl() {
         AVG_FASTDL_SPEED=""
       fi
 
+      # if any data
+      if [[ -f "$HOME"/bin/include/logs/vps_user ]]; then
+        FASTDL_USER="$(<"$HOME"/bin/include/logs/vps_user)"
+      fi
+      # if any data
+      if [[ -f "$HOME"/bin/include/logs/vps_host ]]; then
+        FASTDL_HOST="$(<"$HOME"/bin/include/logs/vps_host)"
+      fi
+
       ##########################################################################
 
       FASTDL_OUTPUT="FastDL
 ├─ Status......: $FASTDL_STATUS
 ├─ User........: $FASTDL_USER
+├─ Host........: $FASTDL_HOST
 ├─ URL.........: $FASTDL_DWN_URL
 └─ Speed.......: $FASTDL_SPEED $AVG_FASTDL_SPEED
 
