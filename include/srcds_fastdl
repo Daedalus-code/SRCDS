@@ -125,12 +125,12 @@ function srcds_fastdl() {
       FASTDL_USER="N/A"
 
       # if not found
-      if [[ ! -f "$HOME"/bin/include/logs/fastdl_speed.log ]]; then
-        echo "0" >"$HOME"/bin/include/logs/fastdl_speed.log
+      if [[ ! -f "$HOME"/bin/include/logs/fastdl.log ]]; then
+        touch "$HOME"/bin/include/logs/fastdl.log
       fi
 
       # file age
-      FILE_AGE="$(($(date +%s) - $(stat -c %Y "$HOME"/bin/include/logs/fastdl_speed.log 2>/dev/null)))"
+      FILE_AGE="$(($(date +%s) - $(stat -c %Y "$HOME"/bin/include/logs/fastdl.log 2>/dev/null)))"
 
       if [[ -n "$ONLINE_CHECK" ]] && curl -fsI "$FASTDL_DWN_URL/maps/$ONLINE_CHECK" >/dev/null; then
         FASTDL_STATUS="OK"
@@ -138,14 +138,14 @@ function srcds_fastdl() {
         if [[ "$FILE_AGE" -gt "600" ]]; then
           FASTDL_SPEED=$(curl -o /dev/null -s -w "%{speed_download}" "$FASTDL_DWN_URL/maps/$ONLINE_CHECK" | awk '{printf "%.1f KB/s",$1/1024}')
           # track value for average
-          echo "$FASTDL_SPEED" >>"$HOME"/bin/include/logs/fastdl_speed.log
+          echo "$FASTDL_SPEED" >>"$HOME"/bin/include/logs/fastdl.log
         else
-          FASTDL_SPEED="$(tail -1 "$HOME"/bin/include/logs/fastdl_speed.log)"
+          FASTDL_SPEED="$(tail -1 "$HOME"/bin/include/logs/fastdl.log)"
         fi
         # average value
-        echo "$(tail -10 "$HOME"/bin/include/logs/fastdl_speed.log 2>/dev/null)" >"$HOME"/bin/include/logs/fastdl_speed.log
-        TOT_FASTDL_SPEED="$(awk '{sum += $1} END {print sum}' "$HOME"/bin/include/logs/fastdl_speed.log 2>/dev/null)"
-        TOT_FASTDL_SPEED_COUNT="$(wc -l "$HOME"/bin/include/logs/fastdl_speed.log 2>/dev/null | awk '{ print $1 }')"
+        echo "$(tail -10 "$HOME"/bin/include/logs/fastdl.log 2>/dev/null)" >"$HOME"/bin/include/logs/fastdl.log
+        TOT_FASTDL_SPEED="$(awk '{sum += $1} END {print sum}' "$HOME"/bin/include/logs/fastdl.log 2>/dev/null)"
+        TOT_FASTDL_SPEED_COUNT="$(wc -l "$HOME"/bin/include/logs/fastdl.log 2>/dev/null | awk '{ print $1 }')"
         AVG_FASTDL_SPEED="Average: $(echo "$TOT_FASTDL_SPEED/$TOT_FASTDL_SPEED_COUNT" | bc 2>/dev/null) KB/s"
       else
         FASTDL_STATUS="Offline, no maps on server!"
