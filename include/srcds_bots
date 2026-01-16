@@ -95,7 +95,7 @@ function srcds_bot_generate() {
 Default
     Skill = 50
     Aggression = 50
-    ReactionTime = 0.3
+    ReactionTime = 0.30
     Teamwork = 75
     Cost = 0
 End
@@ -110,19 +110,51 @@ Template Rifle
     WeaponPreference = m4a1
     WeaponPreference = galil
     WeaponPreference = famas
-    WeaponPreference = deagle
+    WeaponPreference = aug
+    WeaponPreference = sg552
 End
 
-Template Sniper  WeaponPreference = awp End
-Template Shotgun WeaponPreference = xm1014 WeaponPreference = m3 End
-Template Spray   WeaponPreference = p90 WeaponPreference = mp5 WeaponPreference = mac10 End
-Template Knife   WeaponPreference = knife End
+Template Sniper
+    WeaponPreference = awp
+    WeaponPreference = scout
+    WeaponPreference = g3sg1
+    WeaponPreference = sg550
+End
+
+Template Shotgun
+    WeaponPreference = xm1014
+    WeaponPreference = m3
+End
+
+Template Spray
+    WeaponPreference = p90
+    WeaponPreference = mp5
+    WeaponPreference = mac10
+    WeaponPreference = ump45
+    WeaponPreference = tmp
+End
+
+Template Pistol
+    WeaponPreference = glock
+    WeaponPreference = usp
+    WeaponPreference = p228
+    WeaponPreference = fiveseven
+    WeaponPreference = elite
+End
+
+Template Heavy
+    WeaponPreference = m249
+End
+
+Template Knife
+    WeaponPreference = knife
+End
 
 Template Eco
     WeaponPreference = glock
     WeaponPreference = usp
     WeaponPreference = p228
-    WeaponPreference = deagle
+    WeaponPreference = fiveseven
     Cost = 1
 End
 EOF
@@ -255,7 +287,7 @@ EOF
     mkdir -p "$SRCDS_DIR/$SERVER_GAME/custom/bots"
     RAND_SUFFIX=$((RANDOM % 10000))
     mv botprofile.db "$SRCDS_DIR/$SERVER_GAME/custom/bots/botprofile_$RAND_SUFFIX.db"
-    dialog --msgbox "Saved as botprofile_$RAND_SUFFIX.db - Bots: $NUM_PROFILES" 6 35
+    dialog --msgbox "Saved as botprofile_$RAND_SUFFIX.db - Bots: $NUM_PROFILES" 6 45
   else
     # remove bot profile
     rm "$HOME"/botprofile.db &>/dev/null
