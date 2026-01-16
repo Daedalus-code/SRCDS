@@ -39,7 +39,6 @@ source "$HOME/bin/include/srcds_fastdl"
 source "$HOME/bin/include/srcds_console"
 source "$HOME/bin/include/srcds_crontab"
 source "$HOME/bin/include/srcds_options"
-source "$HOME/bin/include/srcds_functions"
 source "$HOME/bin/include/random_password"
 
 ################################################################################
