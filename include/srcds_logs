@@ -25,8 +25,8 @@
 function srcds_logs() {
 
   # total log lines
-  TOTAL_LINES="$(wc -l "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | tail -1 | awk '{ print $1 }')"
-  TOTAL_SIZE=$(stat -c%s "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | awk '{sum += $1} END {print sum}')
+  TOTAL_LINES="$(wc -l "$HOME"/bin/include/cron.log "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | tail -1 | awk '{ print $1 }')"
+  TOTAL_SIZE=$(stat -c%s "$HOME"/bin/include/cron.log "$HOME"/bin/include/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | awk '{sum += $1} END {print sum}')
 
   if [[ $TOTAL_SIZE -ge 1073741824 ]]; then
     TOTAL_SIZE="$(awk "BEGIN {printf \"%.2f\", $TOTAL_SIZE/1024/1024/1024}") GB"
