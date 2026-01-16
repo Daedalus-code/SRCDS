@@ -127,10 +127,12 @@ function srcds_fastdl() {
       # if not found
       if [[ ! -f "$HOME"/bin/include/logs/fastdl.log ]]; then
         touch "$HOME"/bin/include/logs/fastdl.log
+        # file age
+        FILE_AGE="601"
+      else
+        # file age
+        FILE_AGE="$(($(date +%s) - $(stat -c %Y "$HOME"/bin/include/logs/fastdl.log 2>/dev/null)))"
       fi
-
-      # file age
-      FILE_AGE="$(($(date +%s) - $(stat -c %Y "$HOME"/bin/include/logs/fastdl.log 2>/dev/null)))"
 
       if [[ -n "$ONLINE_CHECK" ]] && curl -fsI "$FASTDL_DWN_URL/maps/$ONLINE_CHECK" >/dev/null; then
         FASTDL_STATUS="OK"
