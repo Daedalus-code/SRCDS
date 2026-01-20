@@ -44,10 +44,9 @@ function srcds_active() {
     [[ "$LINE" =~ ^# ]] && continue     # skip commented lines
 
     # use counter as menu number, full line as menu text
-    USER_ID="$HOME"/bin/include/logs/user_id
     MENU_ITEMS+=("  $COUNTER" "$LINE")
     ((COUNTER++))
-  done <"$USER_ID"
+  done <"$HOME"/bin/include/logs/user_id
 
   ITEM_COUNT=$((${#MENU_ITEMS[@]} / 2))
   [[ "$ITEM_COUNT" -eq 0 ]] && {
