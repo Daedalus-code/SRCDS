@@ -29,13 +29,6 @@ function srcds_active() {
     return 1
   fi
 
-  TMPFILE="/$HOME/bin/include/logs/user_id"
-
-  [[ ! -f "$TMPFILE" ]] && {
-    dialog --msgbox "Player file not found:\n$TMPFILE" 8 50
-    return 1
-  }
-
   # fetch mysql credentials from hlstats.conf
   DB_HOST="$(grep DBHost "$HLSTATSX_DIR"/hlstats.conf | grep -v "#" | awk '{print $NF}' | tr -d '"' | awk -F: '{print $1}')"
   DB_USER="$(grep DBUsername "$HLSTATSX_DIR"/hlstats.conf | grep -v "#" | awk '{print $NF}' | tr -d '"')"
@@ -51,9 +44,10 @@ function srcds_active() {
     [[ "$LINE" =~ ^# ]] && continue     # skip commented lines
 
     # use counter as menu number, full line as menu text
+    USER_ID="$HOME"/bin/include/logs/user_id
     MENU_ITEMS+=("  $COUNTER" "$LINE")
     ((COUNTER++))
-  done <"$TMPFILE"
+  done <"$USER_ID"
 
   ITEM_COUNT=$((${#MENU_ITEMS[@]} / 2))
   [[ "$ITEM_COUNT" -eq 0 ]] && {
