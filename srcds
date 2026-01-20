@@ -177,14 +177,20 @@ function srcds_configs() {
 ################################################################################
 
 CACHE="$HOME/bin/include/logs/status.log"
+CACHE_USERS="$HOME/bin/include/logs/user_id"
 
 TMP_STATUS="$(tail -100 "$HOME"/bin/include/logs/screenlog.0 2>/dev/null | grep -A7 "hostname" | tail -8 | tr -d ')\r')"
+TMP_USERS="$(tail -100 "$HOME"/bin/include/logs/screenlog.0 2>/dev/null | grep -A64 "userid" | grep "#" | grep -v "userid" | awk '!a[$0]++' | tr -d '#' | column -t)"
 
 if [ -n "$TMP_STATUS" ]; then
   printf '%s\n' "$TMP_STATUS" >"$CACHE"
 fi
+if [ -n "$TMP_USERS" ]; then
+  printf '%s\n' "$TMP_USERS" >"$CACHE_USERS"
+fi
 
 ACTIVE_STATUS="$(cat "$CACHE" 2>/dev/null)"
+ACTIVE_USERS="$(cat "$CACHE_USERS" 2>/dev/null)"
 
 ################################################################################
 
@@ -206,6 +212,8 @@ if [[ -z "$ACTIVE_HOSTNAME" ]]; then
   ACTIVE_HOSTNAME="No server name!"
 fi
 
+################################################################################
+
 ACTIVE_AMOUNT="$(echo "$ACTIVE_STATUS" | grep "players" | egrep -o "[0-9]+" | head -2 | awk '{sum += $1} END {print sum}' 2>/dev/null)"
 ACTIVE_IRL_AMOUNT="$(echo "$ACTIVE_STATUS" | grep "players" | awk '{ print $3 }' | tr -d '(')"
 ACTIVE_BOT_AMOUNT="$(echo "$ACTIVE_STATUS" | grep "players" | awk '{ print $5 }' | tr -d '(')"
@@ -213,10 +221,10 @@ ACTIVE_MAX_AMOUNT="$(echo "$ACTIVE_STATUS" | grep "players" | awk '{ print $7 }'
 ACTIVE_MAP="$(echo "$ACTIVE_STATUS" | grep "map" | awk '{ print $3 }')"
 ACTIVE_WAN="$(echo "$ACTIVE_STATUS" | grep 'udp/ip' | awk '{print $NF}')"
 
-# active users
-ACTIVE_USERS="$(tail -100 "$HOME"/bin/include/logs/screenlog.0 2>/dev/null | grep -A"$ACTIVE_MAX_AMOUNT" "userid" | grep "#" | grep -v "userid" | awk '!a[$0]++' | tr -d '#' | column -t)"
-ACTIVE_USERS_COUNT="$(echo "$ACTIVE_USERS" | wc -l)"
+################################################################################
 
+# active users
+ACTIVE_USERS_COUNT="$(echo "$ACTIVE_USERS" | wc -l)"
 # if greater than n
 if [[ "$ACTIVE_USERS_COUNT" -gt "0" ]]; then
   # update active players
