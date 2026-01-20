@@ -214,13 +214,13 @@ ACTIVE_MAP="$(echo "$ACTIVE_STATUS" | grep "map" | awk '{ print $3 }')"
 ACTIVE_WAN="$(echo "$ACTIVE_STATUS" | grep 'udp/ip' | awk '{print $NF}')"
 
 # active users
-ACTIVE_USERS="$(tail -100 "$HOME"/bin/include/logs/screenlog.0 2>/dev/null | grep -A"$ACTIVE_MAX_AMOUNT" "userid" | grep "#" | grep -v "userid" | awk '!a[$0]++')"
+ACTIVE_USERS="$(tail -100 "$HOME"/bin/include/logs/screenlog.0 2>/dev/null | grep -A"$ACTIVE_MAX_AMOUNT" "userid" | grep "#" | grep -v "userid" | awk '!a[$0]++' | tr -d '#' | column -t)"
 ACTIVE_USERS_COUNT="$(echo "$ACTIVE_USERS" | wc -l)"
 
 # if greater than n
 if [[ "$ACTIVE_USERS_COUNT" -gt "0" ]]; then
   # update active players
-  grep -A"$ACTIVE_USERS_COUNT" "userid" "$HOME"/bin/include/logs/screenlog.0 2>/dev/null | grep -v "rcon" | tail -"$ACTIVE_USERS_COUNT" | tr -d '#' | column -t >"$HOME"/bin/include/logs/user_id
+  echo "$ACTIVE_USERS" >"$HOME"/bin/include/logs/user_id
 fi
 
 ################################################################################
