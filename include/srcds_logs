@@ -53,7 +53,7 @@ function srcds_logs() {
     3 "Addons           View SourceMod logs"
     4 "Steam            View Steam logs"
     5 "Debug            View debug.log"
-    6 "Screen           View screenlog.0"
+    6 "Screen           nano screenlog.0"
     7 "Cron             View cron.log"
     0 "Purge            Delete all logs"
   )
@@ -151,7 +151,7 @@ function srcds_logs() {
     else
       # keep n lines
       echo "$(tail -1440 "$HOME"/bin/include/logs/screenlog.0 2>/dev/null)" >"$HOME"/bin/include/logs/screenlog.0
-      dialog --tailbox "$SCREEN_LOGS" 30 121
+      nano "$HOME"/bin/include/logs/screenlog.0
     fi
     srcds_logs # go back to configs menu
     ;;
