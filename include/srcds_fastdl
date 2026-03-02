@@ -162,9 +162,15 @@ function srcds_fastdl() {
       if [[ -f "$HOME"/bin/include/logs/vps_user ]]; then
         FASTDL_USER="$(<"$HOME"/bin/include/logs/vps_user)"
       fi
+
       # if any data
       if [[ -f "$HOME"/bin/include/logs/vps_host ]]; then
         FASTDL_HOST="$(<"$HOME"/bin/include/logs/vps_host)"
+      fi
+
+      # default vps dir
+      if [[ -s "$HOME"/bin/include/logs/vps_dir || ! -f "$HOME"/bin/include/logs/vps_dir ]]; then
+        VPS_DIR_CACHE="/var/www/html/cstrike"
       fi
       # if any data
       if [[ -f "$HOME"/bin/include/logs/vps_dir ]]; then
@@ -252,11 +258,6 @@ Sounds
       echo "$VPS_HOST" >"$HOME"/bin/include/logs/vps_host
 
       ##########################################################################
-
-      # default vps dir
-      if [[ ! -f "$HOME"/bin/include/logs/vps_dir ]]; then
-        VPS_DIR_CACHE="/var/www/html/cstrike"
-      fi
 
       VPS_FASTDL_DIR=$(dialog --inputbox "FastDL directory:" 8 50 "$VPS_DIR_CACHE" 3>&1 1>&2 2>&3)
       # keep vps dir cache
