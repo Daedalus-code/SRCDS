@@ -158,6 +158,41 @@ function srcds_fastdl() {
         AVG_FASTDL_SPEED=""
       fi
 
+      ##########################################################################
+
+      # default dir cache
+      VPS_DIR_CACHE=""
+      # if no data, if missing
+      if [[ -s "$HOME"/bin/include/logs/vps_dir || ! -f "$HOME"/bin/include/logs/vps_dir ]]; then
+        echo "/var/www/html/cstrike" >"$HOME"/bin/include/logs/vps_dir
+      fi
+      # if found
+      if [[ -f "$HOME"/bin/include/logs/vps_dir ]]; then
+        VPS_DIR_CACHE="$(<"$HOME"/bin/include/logs/vps_dir)"
+      fi
+
+      ##########################################################################
+
+      # default user cache
+      VPS_USER_CACHE=""
+      # if found
+      if [[ -f "$HOME"/bin/include/logs/vps_user ]]; then
+        # vps user cache
+        VPS_USER_CACHE="$(<"$HOME"/bin/include/logs/vps_user)"
+      fi
+
+      ##########################################################################
+
+      # default host cache
+      VPS_HOST_CACHE=""
+      # if found
+      if [[ -f "$HOME"/bin/include/logs/vps_host ]]; then
+        # vps user cache
+        VPS_HOST_CACHE="$(<"$HOME"/bin/include/logs/vps_host)"
+      fi
+
+      ##########################################################################
+
       # if any data
       if [[ -f "$HOME"/bin/include/logs/vps_user ]]; then
         FASTDL_USER="$(<"$HOME"/bin/include/logs/vps_user)"
@@ -168,10 +203,6 @@ function srcds_fastdl() {
         FASTDL_HOST="$(<"$HOME"/bin/include/logs/vps_host)"
       fi
 
-      # default vps dir
-      if [[ -s "$HOME"/bin/include/logs/vps_dir || ! -f "$HOME"/bin/include/logs/vps_dir ]]; then
-        VPS_DIR_CACHE="/var/www/html/cstrike"
-      fi
       # if any data
       if [[ -f "$HOME"/bin/include/logs/vps_dir ]]; then
         FASTDL_DIR="$(<"$HOME"/bin/include/logs/vps_dir)"
@@ -229,29 +260,11 @@ Sounds
 
     "3")
 
-      # default user cache
-      VPS_USER_CACHE=""
-
-      # if found
-      if [[ -f "$HOME"/bin/include/logs/vps_user ]]; then
-        # vps user cache
-        VPS_USER_CACHE="$(cat "$HOME"/bin/include/logs/vps_user 2>/dev/null)"
-      fi
-
       VPS_USER=$(dialog --inputbox "Enter VPS SSH username:" 8 40 "$VPS_USER_CACHE" 3>&1 1>&2 2>&3)
       # keep vps user cache
       echo "$VPS_USER" >"$HOME"/bin/include/logs/vps_user
 
       ##########################################################################
-
-      # default host cache
-      VPS_HOST_CACHE=""
-
-      # if found
-      if [[ -f "$HOME"/bin/include/logs/vps_host ]]; then
-        # vps user cache
-        VPS_HOST_CACHE="$(cat "$HOME"/bin/include/logs/vps_host 2>/dev/null)"
-      fi
 
       VPS_HOST=$(dialog --inputbox "Enter VPS hostname or IP:" 8 40 "$VPS_HOST_CACHE" 3>&1 1>&2 2>&3)
       # keep vps host cache
