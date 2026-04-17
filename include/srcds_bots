@@ -70,16 +70,6 @@ function srcds_bot_generate() {
     esac
   done
 
-  get_unique_name() {
-    local POOL=("$@")
-    while :; do
-      N=$(select_random "${POOL[@]}")
-      [[ ! " ${USED_NAMES[*]} " =~ " $N " ]] && break
-    done
-    USED_NAMES+=("$N")
-    echo "$N"
-  }
-
   ##############################################################################
   # bot count
   ##############################################################################
