@@ -39,6 +39,7 @@ function srcds_bot_generate() {
   BOT_DIFFICULTY=${BOT_DIFFICULTY:-2}
 
   mapfile -t NAMES <"$BOTDIR/names.txt" || return 1
+  shuffled_names=($(printf "%s\n" "${NAMES[@]}" | shuf))
 
   select_random() {
     local A=("$@")
@@ -184,7 +185,36 @@ EOF
       [[ "$DIFF" == "Hard" ]] && NAME_POOL+=("${PRO_NAMES[@]}")
       [[ "$DIFF" == "Expert" ]] && NAME_POOL+=("${ELITE_NAMES[@]}")
 
-      NAME=$(get_unique_name "${NAME_POOL[@]}")
+      NAME=""
+
+      # try to get unused name that fits the pool
+      for n in "${shuffled_names[@]}"; do
+        if [[ " ${USED_NAMES[*]} " =~ " $n " ]]; then
+          continue
+        fi
+
+        if [[ " ${NAME_POOL[*]} " =~ " $n " ]]; then
+          NAME="$n"
+          USED_NAMES+=("$n")
+          break
+        fi
+      done
+
+      # fallback: take next unused name (ignore pool)
+      if [[ -z "$NAME" ]]; then
+        for n in "${shuffled_names[@]}"; do
+          if [[ ! " ${USED_NAMES[*]} " =~ " $n " ]]; then
+            NAME="$n"
+            USED_NAMES+=("$n")
+            break
+          fi
+        done
+      fi
+
+      # if all names are used → allow duplicates
+      if [[ -z "$NAME" ]]; then
+        NAME=$(select_random "${NAMES[@]}")
+      fi
 
       SKIN=$((RANDOM % 5))
       VOICE=$((RANDOM % 44 + 85))
