@@ -43,6 +43,21 @@ fi
 
 ################################################################################
 
+# if zero
+if [[ -z "$SERVER_LOG_LIMIT" ]]; then
+  SERVER_LOG_LIMIT="1024"
+fi
+
+# total log size
+TOTAL_SIZE_BYTES=$(stat -c%s "$HOME"/bin/include/logs/cron.log "$HOME"/bin/include/logs/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* 2>/dev/null | awk '{sum += $1} END {print sum}')
+# if log size greater than n (megabytes)
+if [[ "$(echo "$TOTAL_SIZE_BYTES/1024/1024" | bc 2>/dev/null)" -gt "$SERVER_LOG_LIMIT" ]]; then
+  # reset logs
+  truncate -s 0 "$HOME"/bin/include/logs/cron.log "$HOME"/bin/include/logs/screenlog.0 "$SRCDS_DIR"/debug.log "$HOME"/Steam/logs/*.txt.log "$SRCDS_DIR"/"$SERVER_GAME"/logs/*.log "$SRCDS_DIR"/"$SERVER_GAME"/addons/sourcemod/logs/*.log "$HLSTATSX_DIR"/logs/hlstats* &>/dev/null
+fi
+
+################################################################################
+
 # if server_random_bots is set in srcds configuration
 if [[ "$(grep "SERVER_RANDOM_BOTS" "$HOME"/bin/include/srcds.conf | awk -F= '{ print $NF }')" -eq "1" ]]; then
   # if bot_difficulty configuration exist
